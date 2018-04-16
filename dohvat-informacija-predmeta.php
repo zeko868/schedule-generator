@@ -1,6 +1,9 @@
 <?php
+/*  // otkomentirati sljedeće linije u slučaju da se skripta želi koristiti samostalno za generiranje podataka o terminima nastave
 date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
-//$studij = 2831;     // 2831 je šifra DS INF smjera
+$studij = 2831;     // 2831 je šifra DS INF smjera
+*/
+$vrsteNastavePoBojama = array_flip($boje);
 $zimskiSemestarPocetak = strtotime('22.09.' . date('Y'));
 $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
 if (time() < $zimskiSemestarPocetak) {
@@ -29,7 +32,7 @@ $libXmlInfo = `php --ri libxml`;
 foreach (explode("\n", $libXmlInfo) as $line) {
     if (strpos($line, 'Compiled Version') !== false) {
         $libXmlVersion = explode(' => ', $line)[1];
-        $novaVerzijaLibXml = !version_compare($libXmlVersion, '2.9.5') >= 0;
+        $novaVerzijaLibXml = version_compare($libXmlVersion, '2.9.5') >= 0;
         break;
     }
 }
@@ -44,7 +47,7 @@ $doc = new DomDocument;
 // We need to validate our document before refering to the id
 $doc->validateOnParse = true;
 
-$ch = curl_init("http://nastava.foi.hr/public/study?study=$studij&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
+$ch = curl_init("https://nastava.foi.hr/public/study?study=$studij&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 $doc->loadHTML(curl_exec($ch));
 curl_close($ch);
@@ -90,7 +93,7 @@ $godine--;
 $rasporedi = [];
 $obveznostNastavePoPredmetima = [];
 foreach ($sifreKolegija as $sifra => $nazivPredmeta) {
-    $ch = curl_init("http://nastava.foi.hr/public/course?study=$studij&course=$sifra&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
+    $ch = curl_init("https://nastava.foi.hr/public/course?study=$studij&course=$sifra&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $doc->loadHTML(curl_exec($ch));
     curl_close($ch);
@@ -133,7 +136,7 @@ foreach ($sifreKolegija as $sifra => $nazivPredmeta) {
     $obveznostNastavePoPredmetima[$nazivPredmeta] = $obveznostPredmeta;
 }
 
-$ch = curl_init('http://nastava.foi.hr/public/schedule');
+$ch = curl_init('https://nastava.foi.hr/public/schedule');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, 1);
 $doc->loadHTML(curl_exec($ch));
@@ -150,7 +153,7 @@ foreach ($doc->getElementById('academicYear')->getElementsByTagName('option') as
 for ($godina=1; $godina<=$godine; $godina++) {
     //foreach ([1, 2] as $semestar) {
     $semestar = ($trenutnoZimskiSemestar ? 1 : 2);
-    $ch = curl_init('http://nastava.foi.hr/public/ajaxScheduleGetGroups');
+    $ch = curl_init('https://nastava.foi.hr/public/ajaxScheduleGetGroups');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['study' => $studij, 'year' => $godina, 'semester' => $semestar, 'academicYear' => $sifraAkademskeGodine]));
@@ -160,7 +163,7 @@ for ($godina=1; $godina<=$godine; $godina++) {
 
     foreach ($xmlAjax->option as $optionGrupa) {
         $sifraGrupe = (string) $optionGrupa['value'];
-        $ch = curl_init('http://nastava.foi.hr/public/schedule');
+        $ch = curl_init('https://nastava.foi.hr/public/schedule');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['study.id' => $studij, 'year' => $godina, 'semester' => $semestar, 'studentGroup' => $sifraGrupe, 'academicYear.id' => $sifraAkademskeGodine]));
@@ -180,19 +183,16 @@ for ($godina=1; $godina<=$godine; $godina++) {
         $malformedJson = substr($jsCode, $beginPosition, $endPosition-$beginPosition);  // kvazi-JSON ili točnije kôd valjanog JavaScript objekta
         if ($jestWindowsLjuska) {   // problem na windowsima jer shell dozvoljava do 8000 znakova, dok distribucije linuxa dozvoljavaju mnogo više
             $nameOfThisFile = basename(__FILE__, '.php');
-            $tmpJsCodeFilename = $nameOfThisFile . '_kod_za_konverziju_js_koda_u_json.js';
-            $validJsonFilename = $nameOfThisFile . '_ispravan_raspored.json';
+            $tmpJsCodeFilename = 'kod-za-konverziju-js-koda-u-json.js';
             file_put_contents($tmpJsCodeFilename, <<<EOS
-            var fs = require('fs');
-            fs.writeFile('$validJsonFilename', 
+            console.log(
                 JSON.stringify(
                     $malformedJson
                 )
             );
 EOS
             );
-            shell_exec("node $tmpJsCodeFilename");
-            $validJson = file_get_contents($validJsonFilename);
+            $validJson = `node $tmpJsCodeFilename`;// shell_exec("node $tmpJsCodeFilename");
         }
         else {
             $validJson = `nodejs -e "console.log(JSON.stringify($malformedJson));"`;
@@ -208,25 +208,10 @@ EOS
                     }
                     $prethodniId = $stavka->scheduleId;
                     list($nazivPredmeta, $lokacija) = explode("\n", $stavka->title, -1);    // -1 označava da se zadnji element briše
-                    switch ($stavka->color) {
-                        case '#641A45':
-                            $vrstaNastave = 'lv';
-                            break;
-                        case '#CE003D':
-                            $vrstaNastave = 'p';
-                            break;
-                        case '#006A8D':
-                            $vrstaNastave = 's';
-                            break;
-                        case '#00A4A7':
-                            $vrstaNastave = 'av';
-                            break;
-                        case '#5F6062':
-                            $vrstaNastave = 'v';
-                            break;
-                        default:
-                            $ignorirajUnos = true;
-                            continue 2;   // proskoči termine ostalih oblika nastave poput ispita, nadoknada i demonstratura
+                    $vrstaNastave = $vrsteNastavePoBojama[$stavka->color];
+                    if ($vrstaNastave === null) {
+                        $ignorirajUnos = true;
+                        continue;   // proskoči termine ostalih oblika nastave poput ispita, nadoknada i demonstratura
                     }
                     if (isset($rasporedi[$nazivPredmeta][$vrstaNastave][$prethodniId])) {   // termin nastave koji je predviđen za studente iz više grupa treba imatu jedan zajednički identifikator, a ne da za svaku grupu je poseban - taj problem se rješava u metodi dodaj_u_raspored()
                         $ignorirajUnos = true;
@@ -295,7 +280,7 @@ function dodaj_u_raspored() {
         //$rasporedi[$prethodniId] =
         $stavkaZaDodavanje =
             [
-                'naziv' => $nazivPredmeta,
+                'predmet' => $nazivPredmeta,
                 'vrsta' => $vrstaNastave,
                 //'obveznost' => $obveznostPredmeta==='all' || in_array($vrstaNastave, $obveznostPredmeta),
                 'obveznost' => false,

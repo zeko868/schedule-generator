@@ -1,18 +1,23 @@
 .left {
     margin-left: 2.5%;
     width: 40%;
+    width: calc((95% - 17em)/2);
 }
 .middle {
     position: absolute;
     top: 30px;
     margin-left: 42.5%;
+    margin-left: calc(2.5% + (95% - 17em)/2);
     width: 15%;
+    width: 17em;
 }
 .right {
     position: absolute;
     top: 0px;
     margin-left: 57.5%;
+    margin-left: calc(97.5% - (95% - 17em)/2);
     width: 40%;
+    width: calc((95% - 17em)/2);
 }
 .left select, .right select {
     width: 100%;
@@ -48,13 +53,13 @@ nav {
 .ui-dialog-titlebar-close {
     visibility: hidden;
 }
-#ogranicenja, #serijalizirana-forma-ogranicenja {
+#ogranicenja {
     display: none;
 }
 input[type="radio"] {
     margin-right: 20px !important;
 }
-#forma-ogranicenja input, #forma-ogranicenja select {
+#forma-ogranicenja label {
     margin: 0 10px;
 }
 .brisi-ogranicenje {
@@ -72,6 +77,34 @@ input[type="number"] {
     white-space: nowrap;
 }
 
+#forma-ogranicenja select {
+    width: 10vw;
+}
+
 #calendar {
     min-width: 700px;
+    width: 99.95%;
+}
+
+#study {
+    width: auto;
+    margin: 0 auto;
+}
+
+#study ~ button[type="submit"] {
+    display: block;
+    margin: 0 auto;
+    padding: 0 3em;
+}
+
+.divTimeSetterContainer {
+    margin: -4px 0 0 2px;
+}
+
+.divTimeSetterContainer input.timePart {
+    margin-top: 3px;
+}
+
+.divTimeSetterContainer input.hours, .divTimeSetterContainer input.minutes {
+    width: 30px;
 }

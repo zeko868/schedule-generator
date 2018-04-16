@@ -6,7 +6,8 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css"/>
         <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.css" type="text/css"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/fullcalendar.min.css" type="text/css"/>
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/fullcalendar.print.css" type="text/css" media="print"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/fullcalendar.print.css" type="text/css" media="print"/>
+        <link rel="stylesheet" href="https://rawgit.com/sandunangelo/jquery-timesetter/master/css/jquery.timesetter.min.css" type="text/css"/>
         <link rel="stylesheet" href="css/stil-aplikacije.css" type="text/css"/>
     </head>
     <body>
@@ -27,30 +28,65 @@ if (isset($_GET['study_id'])) {
                     'lv' => '#641A45',
                     'v' => '#5F6062'
                 ];
-                require 'dohvat_informacija_predmeta.php';
+                ini_set('memory_limit', -1);
+                set_time_limit(0);
+                $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
+                require 'dohvat-informacija-predmeta.php';
                 if (isset($_POST['upisano'])) {
                     $descriptorspec = array(
                         array('pipe', 'r'),
+                        array('pipe', 'w'),
                         array('pipe', 'w')
                     );
-                    $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak_rasporeda.pl';
-                    $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, 'E:/Program Files/swipl/bin/');
+                    $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+                    // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
+                    if ($jestWindowsLjuska) {
+                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
+                    }
+                    else {
+                        $env = array(
+                            'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
+                        );
+                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, NULL, $env);
+                    }
                     $cmdUnosPredmetaTeOgranicenja = '';
                     foreach ($_POST['upisano'] as $nazivPredmeta) {
                         $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$nazivPredmeta')),";
                     }
-                    foreach ($_POST['ogranicenja'] as $ogranicenje) {
-                        $cmdUnosPredmetaTeOgranicenja .= "(clause($ogranicenje, _) -> $ogranicenje ; asserta($ogranicenje)),";
+                    $cmdTrazi = 'dohvatiRaspored(false)';
+                    if (isset($_POST['ogranicenja'])) {
+                        $cmdZadnjaOgranicenja = '';
+                        foreach ($_POST['ogranicenja'] as $ogranicenje) {
+                            if (preg_match('/^dohvatiRaspored\((true|false)\)$/', $ogranicenje)) {
+                                $cmdTrazi = $ogranicenje;
+                            }
+                            else {
+                                $ogranicenje = preg_replace("/,''|'',/", '', $ogranicenje, -1, $brojZamjena);
+                                if ($brojZamjena === 0) {
+                                    $cmdUnosPredmetaTeOgranicenja .= "(clause($ogranicenje, _) -> $ogranicenje ; asserta($ogranicenje)),";
+                                }
+                                else {
+                                    $cmdZadnjaOgranicenja .= "ignore($ogranicenje),";
+                                }
+                            }
+                        }
+                        $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
                     }
+                    $cmdTrazi = "ignore($cmdTrazi)";
                     $putanja = dirname($_SERVER['PHP_SELF']);
                     $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatoteke";
-                    $cmd = iconv('utf-8', 'windows-1250', "ignore(dohvatiCinjenice('$lokacijaDatoteke')), ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdUnosPredmetaTeOgranicenja false. halt().");    // false stoji na kraju kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se tako znalo do kuda treba interpretirati rezultat kao json kod
+                    $cmd = "ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
+                    if ($jestWindowsLjuska) {
+                        $cmd = iconv('utf-8', 'windows-1250', $cmd);
+                    }
                     fwrite($pipes[0], $cmd);
                     fclose($pipes[0]);
                     $rasporedi = [];
                     $brojKombinacijaRasporeda = 0;
                     while ($rezultat = fread($pipes[1], 8192)) {
-                        $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
+                        if ($jestWindowsLjuska) {
+                            $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
+                        }
                         foreach (explode("\r\n", $rezultat) as $serijaliziraniRaspored) {
                             if (empty($serijaliziraniRaspored)) {
                                 continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
@@ -63,6 +99,8 @@ if (isset($_GET['study_id'])) {
                         }
                     }
                     fclose($pipes[1]);
+                    fclose($pipes[2]);
+                    proc_close($process);
                 }
                 else {
                     $rasporedi = [$rasporedi];
@@ -71,7 +109,7 @@ if (isset($_GET['study_id'])) {
                 foreach ($rasporedi as $raspored) {
                     $kodRasporeda = '';
                     foreach ($raspored as $stavka) {
-                        $nazivPredmeta = $stavka['naziv'];
+                        $nazivPredmeta = $stavka['predmet'];
                         $skupPredmeta[$nazivPredmeta] = null;
                         $pocetniTjedan = $stavka['razdoblje']['start'];
                         $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
@@ -166,7 +204,7 @@ if (isset($_GET['study_id'])) {
                 </select>
             </div>
             <select name="ogranicenja[]" id="ogranicenja" multiple="multiple"></select>
-            <input type="text" name="serijalizirana-forma-ogranicenja" id="serijalizirana-forma-ogranicenja"/>
+            <input type="hidden" name="serijalizirana-forma-ogranicenja" id="serijalizirana-forma-ogranicenja"/>
         </form>
         <div id="calendar"></div>
         <div id="dialog-form" title="Ograničenja">
@@ -183,6 +221,7 @@ if (isset($_GET['study_id'])) {
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/fullcalendar.min.js"></script>
         <script type="text/javascript" src="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/datejs/date.js"></script>
+        <script type="text/javascript" src="https://rawgit.com/benscobie/jquery-timesetter/bc82f3b74ad039893ed8d700397e0cd96af21a60/js/jquery.timesetter.js"></script>
         <script type="text/javascript" src="js/hr.js"></script>
         <script type="text/javascript" src="js/obrada-dogadjaja.js"></script>
         <script type="text/javascript">
@@ -238,7 +277,7 @@ else {
     // We need to validate our document before refering to the id
     $doc->validateOnParse = true;
 
-    $ch = curl_init('http://nastava.foi.hr/public/schedule');
+    $ch = curl_init('https://nastava.foi.hr/public/schedule');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     error_reporting(E_ERROR | E_PARSE);
     $doc->loadHTML(curl_exec($ch));
