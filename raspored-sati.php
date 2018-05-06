@@ -17,6 +17,7 @@ if (isset($_GET['study_id'])) {
     $studij = $_GET['study_id'];
     ?>
         <script type="text/javascript">
+            var naziviVrsta = {"p":"predavanja", "s":"seminari", "lv":"lab. vježbe", "av":"aud. vježbe", "v":"vježbe"};
             var kodoviRasporeda = [
             <?php
                 $trajanjeTjedna = 7*24*60*60;
@@ -53,12 +54,32 @@ if (isset($_GET['study_id'])) {
                     foreach ($_POST['upisano'] as $nazivPredmeta) {
                         $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$nazivPredmeta')),";
                     }
-                    $cmdTrazi = 'dohvatiRaspored(false)';
+                    $cmdTrazi = 'dohvatiRaspored(\'false\')';
                     if (isset($_POST['ogranicenja'])) {
                         $cmdZadnjaOgranicenja = '';
+                        $prioritetniRedSPravilimaPohadjanjaNastave = [[],[],[],[]];
+                        $odabraniTermini = [];
+                        $zabranjeniTermini = [];
                         foreach ($_POST['ogranicenja'] as $ogranicenje) {
-                            if (preg_match('/^dohvatiRaspored\((true|false)\)$/', $ogranicenje)) {
+                            if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
                                 $cmdTrazi = $ogranicenje;
+                            }
+                            else if (preg_match('/^pohadjanjeNastave\(\'([^\']*)\',\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
+                                $biloKojiPredmet = $matches[1] === '';
+                                $biloKojaVrsta = $matches[2] === 'any';
+                                if ($biloKojiPredmet && $biloKojaVrsta) {
+                                    $prioritet = 0;
+                                }
+                                else if ($biloKojaVrsta) {
+                                    $prioritet = 1;
+                                }
+                                else if ($biloKojiPredmet) {
+                                    $prioritet = 2;
+                                }
+                                else {
+                                    $prioritet = 3;
+                                }
+                                $prioritetniRedSPravilimaPohadjanjaNastave[$prioritet][] = "ignore($ogranicenje)";
                             }
                             else {
                                 $ogranicenje = preg_replace("/,''|'',/", '', $ogranicenje, -1, $brojZamjena);
@@ -69,6 +90,12 @@ if (isset($_GET['study_id'])) {
                                     $cmdZadnjaOgranicenja .= "ignore($ogranicenje),";
                                 }
                             }
+                        }
+                        for ($i=0; $i<4; $i++) {
+                            if (!empty($prioritetniRedSPravilimaPohadjanjaNastave[$i])) {
+                                $cmdZadnjaOgranicenja .= implode(',', $prioritetniRedSPravilimaPohadjanjaNastave[$i]) . ',';
+                            }
+                        
                         }
                         $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
                     }
@@ -103,6 +130,26 @@ if (isset($_GET['study_id'])) {
                     proc_close($process);
                 }
                 else {
+                    $terminiPoVrstamaPoPredmetima = [];
+                    foreach ($rasporedi as $stavka) {
+                        $predmet = $stavka['predmet'];
+                        $vrsta = $stavka['vrsta'];
+                        $termin = $stavka['termin'];
+                        $nazivDana = ['ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota', 'nedjelja'][$termin['dan']-1];
+                        $skraceniNazivDana = substr($nazivDana, 0, 3);
+                        $vrijemePocetka = $termin['start'];
+                        $vrijemePocetkaSaZarezom = str_replace(':', ',', $vrijemePocetka);
+                        $vrijemeZavrsetka = $termin['kraj'];
+                        $vrijemeZavrsetkaSaZarezom = str_replace(':', ',', $vrijemeZavrsetka);
+                        $lokacija = $stavka['lokacija'];
+                        $zgrada = $lokacija['zgrada'];
+                        $prostorija = $lokacija['prostorija'];
+                        $terminiPoVrstamaPoPredmetima[$predmet][$vrsta][] = ["terminILokacija(termin('$nazivDana',vrijeme($vrijemePocetkaSaZarezom),vrijeme($vrijemeZavrsetkaSaZarezom)),lokacija('$zgrada','$prostorija'))" => "$skraceniNazivDana $vrijemePocetka-$vrijemeZavrsetka, $zgrada > $prostorija"];
+                    }
+                    foreach (array_keys($boje) as $vrsta) {
+                        $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
+                    }
+                    $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
                     $rasporedi = [$rasporedi];
                 }
                 $skupPredmeta = [];
@@ -139,6 +186,10 @@ if (isset($_GET['study_id'])) {
             ?>
             ];
             <?php
+            if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
+                $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
+            }
+            echo "var serijaliziraniTerminiPoVrstamaPoPredmetima = $serijaliziraniTerminiPoVrstamaPoPredmetima;";
             if (isset($brojKombinacijaRasporeda)) {
                 echo "var brojKombinacijaRasporeda = $brojKombinacijaRasporeda;";
             }
@@ -205,6 +256,7 @@ if (isset($_GET['study_id'])) {
             </div>
             <select name="ogranicenja[]" id="ogranicenja" multiple="multiple"></select>
             <input type="hidden" name="serijalizirana-forma-ogranicenja" id="serijalizirana-forma-ogranicenja"/>
+            <input type="hidden" name="serijalizirani-termini-po-vrstama-po-predmetima" id="serijalizirani-termini-po-vrstama-po-predmetima"/>
         </form>
         <div id="calendar"></div>
         <div id="dialog-form" title="Ograničenja">
@@ -231,15 +283,21 @@ if (isset($_GET['study_id'])) {
                     $vrijednostiOstalihKontrola = [];
                     foreach ($_POST['ogranicenja'] as $ogranicenje) {
                         //if (preg_match('/^(?<predikat>.*?)\((?:(?:(?:vrijeme|trajanje)\((?<vrijemeIliTrajanje>.*?)\)|(?<predmetIliDan>\'.*?\')|(?<number>\d+)|(?<boolean>true|false))(?:\,|\)))*$/', $ogranicenje, $matches)) {   // ako bi koje ograničenje imalo više vremena/trajanja, tad bi trebalo doraditi ovaj dio
-                        if (preg_match('/^(.*?)\((?:(?:(?:vrijeme|trajanje)\((?<vrijeme>.*?)\)|(\'.*?\')|(\d+)|(true|false))(?:\,|\)))*$/', $ogranicenje, $matches, PREG_OFFSET_CAPTURE)) {
-                            $brojStavki = count($matches) - 3;
+                        if (preg_match('/^(.*?)\((?:(?:(?:vrijeme|trajanje)\((?<vrijeme>.*?)\)|(\'(?:p|s|lv|av|v|any)\')|(\'(?:true|false|da|ne|mozda)\')|(\'(?:\\\'|[^\'])*?\')|(\d+)|((?<slozeni_term>[^(]*\(.+\)(?=[^)]*\)))))(?:\,|\)))*$/', $ogranicenje, $matches, PREG_OFFSET_CAPTURE)) {
+                            $brojIndeksiranihElemenata = 0;
+                            foreach ($matches as $k => $v) {
+                                if (is_integer($k)) {
+                                    $brojIndeksiranihElemenata++;
+                                }
+                            }
+                            $brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata = 2;   // jedan predstavlja rezultat cjelokupnog regexa, a drugi predstavlja naziv predikata
+                            $brojIndeksiranihMatchovaGrupaArgumenataPredikata = $brojIndeksiranihElemenata - $brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata;
                             $predikati[] = '"' . $matches[1][0] . '"';
                             $proslaPozicijaPronadjenog = -1;
-                            $zadnjiElement = 2 + $brojStavki;
-                            for ($iteracija=0; $iteracija<$brojStavki; $iteracija++) {
+                            for ($iteracija=0; $iteracija < $brojIndeksiranihMatchovaGrupaArgumenataPredikata; $iteracija++) {
                                 $novaPozicijaPronadjenog = null;
                                 $indeksPronadjenog = null;
-                                for ($i=2; $i<$zadnjiElement; $i++) {
+                                for ($i=$brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata; $i<$brojIndeksiranihElemenata; $i++) {
                                     $trenutnaPozicija = $matches[$i][1];
                                     if (($trenutnaPozicija !== -1 && ($novaPozicijaPronadjenog === null || $trenutnaPozicija < $novaPozicijaPronadjenog) && $trenutnaPozicija > $proslaPozicijaPronadjenog)) {
                                         $novaPozicijaPronadjenog = $trenutnaPozicija;
@@ -248,8 +306,11 @@ if (isset($_GET['study_id'])) {
                                 }
                                 if ($indeksPronadjenog !== null) {
                                     $pronadjenaVrijednost = $matches[$indeksPronadjenog][0];
-                                    if ($matches['vrijeme'][1] === $novaPozicijaPronadjenog) {
+                                    if (isset($matches['vrijeme']) && $matches['vrijeme'][1] === $novaPozicijaPronadjenog) {
                                         $pronadjenaVrijednost = '"' . str_replace(',', ':', $pronadjenaVrijednost) . '"';
+                                    }
+                                    else if (isset($matches['slozeni_term']) && $matches['slozeni_term'][1] === $novaPozicijaPronadjenog) {
+                                        $pronadjenaVrijednost = '"' . str_replace('"', '\"', $pronadjenaVrijednost) . '"';
                                     }
                                     $vrijednostiOstalihKontrola[]= $pronadjenaVrijednost;
                                     $proslaPozicijaPronadjenog = $novaPozicijaPronadjenog;

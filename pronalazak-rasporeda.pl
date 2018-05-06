@@ -1047,3 +1047,60 @@ pocinjePrecestoPreranoUzastopno(DanUmetaneStavke, MoguciNoviPocetak) :-
 	prebrojiPreraneDane(Dani, NepreferiraniPocetak, DanUmetaneStavke, MoguciNoviPocetak, _, _, NajveciBrojUzastopnoPreranihDana),
 	MaxBrojUzastopnihDana < NajveciBrojUzastopnoPreranihDana
 .
+
+/**
+ * pohadjanjeNastave(+PredmetTmp:atom, +VrstaNastaveTmp:atom, +Status:atom) is failure.
+ *
+ * Predikat koji nastavu iz definiranog predmeta vezanog za varijablu =|PredmetTmp|= (ili za sve predmete ako je vezana vrijednost '') vrste vezane za varijablu =|VrstaNastaveTmp|= (ili za sve vrste nastave ako je vezana vrijednost 'any') čini obveznom, opcionalnom ili zabranjenom, ovisno o vezanoj vrijednosti za varijablu =|Status|= ('da', 'mozda' ili 'ne').
+ * @param PredmetTmp		Naziv predmeta za kojeg se definira obveznost nastave ('' ako za sve predmete)
+ * @param VrstaNastaveTmp	Oznaka vrste nastave za koju se definira obveznost nastave ('any' ako za sve vrste nastave)
+ * @param Status			Status koji označava da li je nastava iz definiranog predmeta i definirane vrste obvezna ('da'), opcionalna ('mozda' ili bilo što drugo) ili zabranjena ('ne')
+ */
+pohadjanjeNastave(PredmetTmp, VrstaNastaveTmp, Status) :-
+	(
+	PredmetTmp == '' ->
+		upisano(Predmet)
+		;
+		Predmet = PredmetTmp
+	),
+	(
+	VrstaNastaveTmp == 'any' ->
+		odrzavanje(Predmet, VrstaNastave, _, _)
+		;
+		VrstaNastave = VrstaNastaveTmp
+	),
+	(
+	Status == 'ne' ->
+		retractall(raspored(Predmet, VrstaNastave, _, _)),
+		ignore(retract(obveznost(Predmet, VrstaNastave)))
+		;
+		obveznost(Predmet, VrstaNastave) ->
+			Status == 'da' ->
+				true
+				;
+				retract(obveznost(Predmet, VrstaNastave))
+			;
+			Status == 'da' ->
+				asserta(obveznost(Predmet, VrstaNastave))
+				;
+				true
+	),
+	false
+.
+
+/**
+ * pohadjanjeTermina(+Predmet:atom, +VrstaNastave:atom, +TerminILokacija:terminILokacija/2, +Status:atom) is semidet.
+ *
+ * Predikat kojim se definira obveznost pohađanja određenog termina nastave ili pak nemogućnost/odbijanje prisustvovanja na njemu.
+ * @param Predmet			Predmet na koji se odnosi termin nastave.
+ * @param VrstaNastave		Oznaka vrste nastave na koji se odnosi termin nastave.
+ * @param TerminILokacija	Termin nastave (zajedno s lokacijom na kojoj se održava)
+ * @param Status			Status koji označava da li je potrebno definirani termin obvezno pohađati ili nismo u mogućnosti/voljni prisustvovati na njemu
+ */
+pohadjanjeTermina(Predmet, VrstaNastave, terminILokacija(Termin, Lokacija), Status) :-
+	Status == 'da' ->
+		retractall(raspored(Predmet, VrstaNastave, _, _)),
+		asserta(raspored(Predmet, VrstaNastave, Termin, Lokacija))
+		;
+		retract(raspored(Predmet, VrstaNastave, Termin, Lokacija))
+.
