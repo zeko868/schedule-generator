@@ -36,22 +36,22 @@ $("#odabir-predmeta").submit(function() {
         var parametri = [];
         $("span > label > *", $(this)).each(function(){
             if ($(this).hasClass("trajanje")) {
-                parametri.push("trajanje(" + $("input.timePart.hours", $(this)).val() + "," + $("input.timePart.minutes", $(this)).val() + ")");
+                parametri.push(`trajanje(${$("input.timePart.hours", $(this)).val()},${$("input.timePart.minutes", $(this)).val()})`);
             }
             else {
                 var vrijednost = $(this).val().toString().replace("'", "\'");
                 switch ($(this).prop("type")) {
                     case "checkbox":
-                        parametri.push("'" + !$(this).prop("checked") + "'");
+                        parametri.push(`'${!$(this).prop("checked")}'`);
                         break;
                     case "radio":
                         if ($(this).is(":checked")) {
-                            parametri.push("'" + vrijednost + "'");
+                            parametri.push(`'${vrijednost}'`);
                         }
                         break;
                     case "time":
                         var vremenskeKomponente = vrijednost.split(":");
-                        parametri.push("vrijeme(" + vremenskeKomponente[0] + "," + vremenskeKomponente[1] + ")");
+                        parametri.push(`vrijeme(${vremenskeKomponente[0]},${vremenskeKomponente[1]})`);
                         break;
                     case "number":
                         parametri.push(vrijednost);
@@ -61,12 +61,12 @@ $("#odabir-predmeta").submit(function() {
                             parametri.push(vrijednost);
                         }
                         else {
-                            parametri.push("'" + vrijednost + "'");
+                            parametri.push(`'${vrijednost}'`);
                         }
                 }
             }
         });
-        $("#ogranicenja").append('<option value="' + nazivPredikata + '(' + parametri.join(",") + ')"></option>');
+        $("#ogranicenja").append(`<option value="${nazivPredikata}(${parametri.join(",")})"></option>`);
     });
     $("#ogranicenja option").each(function(){
         $(this).prop("selected", true);
@@ -114,27 +114,27 @@ function dodajOgranicenje() {
     $("#forma-ogranicenja").append(
         dodaniElement = $(`
         <div>
-            <label>Pravilo:
+            <label>${tekst['rule']}
                 <select>
-                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >najveći broj sati predmeta tjedno</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >najveće trajanje boravka na fakultetu</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >najmanje trajanje nastave</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >najveće trajanje nastave</option>
-                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="1"  value="maxBrojRupa"                             >najveći broj rupa</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >najveće dopušteno trajanje vremenskog razmaka</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >najraniji početak nastave</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >najkasniji završetak nastave</option>
-                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >dan bez nastave</option>
-                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >najmanji broj dana bez nastave</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="2"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">najveći uzastopni broj dana s predugo nastave</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="2"  value="maxBrojUzastopnihDanaRaniPocetak"        >najveći uzastopni broj dana s prerano nastave</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >najveći broj dana s predugo nastave</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >najveći broj dana s prerano nastave</option>
-                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >samo obvezna nastava</option>
-                    <option class="trajanje"                            data-PK-components-num="1"                      value="trajanjePutovanjaDoDrugeZgrade"          >trajanje putovanja od jedne zgrade do druge</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >definicija rupe</option>
-                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="2"                      value="pohadjanjeNastave"                       >pohađanje nastave</option>
-                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >pohađanje određenog termina</option>
+                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >${tekst['maxSatiPredmeta']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >${tekst['maxTrajanjeBoravkaNaFaksu']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >${tekst['minTrajanjeNastave']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >${tekst['maxTrajanjeNastave']}</option>
+                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="1"  value="maxBrojRupa"                             >${tekst['maxBrojRupa']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >${tekst['maxTrajanjeRupe']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >${tekst['najranijiPocetak']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >${tekst['najkasnijiZavrsetak']}</option>
+                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >${tekst['bezNastaveNaDan']}</option>
+                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >${tekst['minBrojDanaBezNastave']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="2"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">${tekst['maxBrojUzastopnihDanaDugoTrajanjeNastave']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="2"  value="maxBrojUzastopnihDanaRaniPocetak"        >${tekst['maxBrojUzastopnihDanaRaniPocetak']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >${tekst['maxBrojDanaDugoTrajanjeNastave']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >${tekst['maxBrojDanaRaniPocetak']}</option>
+                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >${tekst['dohvatiRaspored']}</option>
+                    <option class="trajanje"                            data-PK-components-num="1"                      value="trajanjePutovanjaDoDrugeZgrade"          >${tekst['trajanjePutovanjaDoDrugeZgrade']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >${tekst['definicijaRupe']}</option>
+                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="2"                      value="pohadjanjeNastave"                       >${tekst['pohadjanjeNastave']}</option>
+                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >${tekst['pohadjanjeTermina']}</option>
                 </select>
             </label>
             <span></span>
@@ -157,7 +157,7 @@ function dodajRedakOgranicenja(glavniSelectbox) {
     vrijednostiOgranicenja.empty();
     var oznacenaOpcija = $("option:selected", glavniSelectbox);
     if (oznacenaOpcija.attr("data-PK-components-num") === "1") {
-        var svaIstoimenaPravila = $('#forma-ogranicenja > div > label > select > option:selected[value="' + oznacenaOpcija.val() + '"]').parent();
+        var svaIstoimenaPravila = $(`#forma-ogranicenja > div > label > select > option:selected[value="${oznacenaOpcija.val()}"]`).parent();
         if (svaIstoimenaPravila.length > 1) {
             svaIstoimenaPravila.each(function(){
                 privremenoOsvijetliKontrolu($(this));
@@ -165,87 +165,84 @@ function dodajRedakOgranicenja(glavniSelectbox) {
         }
     }
     if (oznacenaOpcija.hasClass("predmeti")) {
-        var labela = $("<label>Predmet: </label>");
+        var labela = $(`<label>${tekst['course']}</label>`);
         var predmeti = $('<select class="predmeti"></select>');
         if (oznacenaOpcija.hasClass("svi")) {
-            predmeti.append('<option value="">svaki</option>');
+            predmeti.append(`<option value="">${tekst['anyCourse']}</option>`);
         }
-        $("#upisani > option").each(function() {
-            var naziv = $(this).val();
-            predmeti.append('<option value="' + naziv + '">' + naziv + '</option>');
-        });
+        predmeti.append($("#upisani > option").clone());
         labela.append(predmeti);
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("vrste")) {
-        var labela = $("<label>Vrsta: </label>");
+        var labela = $(`<label>${tekst['classType']}</label>`);
         var vrste = $('<select class="vrste"></select>');
         if (oznacenaOpcija.hasClass("svi")) {
-            vrste.append('<option value="any">svaki</option>');
+            vrste.append(`<option value="any">${tekst['anyClassType']}</option>`);
             Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima['']).forEach(function(vrsta) {
-                vrste.append('<option value="' + vrsta + '">' + naziviVrsta[vrsta] + '</option>');
+                vrste.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
             });
         }
         else {
             Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima[$("#upisani > option").first().val()]).forEach(function(vrsta) {
-                vrste.append('<option value="' + vrsta + '">' + naziviVrsta[vrsta] + '</option>');
+                vrste.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
             });
         }
         labela.append(vrste);
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("termini")) {
-        var labela = $("<label>Termin: </label>");
+        var labela = $(`<label>${tekst['term']}</label>`);
         var kontrolaSTerminima = $('<select class="termini"></select>');
         var kontrolePravila = glavniSelectbox.parent().next();
         var terminiNastave = serijaliziraniTerminiPoVrstamaPoPredmetima[$("select.predmeti", kontrolePravila).val()][$("select.vrste", kontrolePravila).val()];
         Object.keys(terminiNastave).forEach(function(val) {
             var vrijednostTermina = Object.keys(terminiNastave[val])[0];
-            kontrolaSTerminima.append('<option value="' + vrijednostTermina + '">' + terminiNastave[val][vrijednostTermina] + '</option>');
+            kontrolaSTerminima.append(`<option value="${vrijednostTermina}">${terminiNastave[val][vrijednostTermina]}</option>`);
         });
         labela.append(kontrolaSTerminima);
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("dani")) {
-        var labela = $("<label>Dan: </label>");
+        var labela = $(`<label>${tekst['day']}</label>`);
         var dani = $("<select></select>");
         if (oznacenaOpcija.hasClass("svi")) {
-            dani.append('<option value="">svaki</option>');
+            dani.append(`<option value="">${tekst['anyDay']}</option>`);
         }
-        ['ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota', 'nedjelja'].forEach(function(nazivDana) {
-            dani.append('<option value="' + nazivDana + '">' + nazivDana + '</option>');
+        naziviDana.forEach(function(nazivDana) {
+            dani.append(`<option value="${nazivDana}">${nazivDana}</option>`);
         });
         labela.append(dani);
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("kolicina")) {
         var donjaGranica = oznacenaOpcija.attr("data-min-value");
-        vrijednostiOgranicenja.append('<label>Broj: <input type="number" value="' + donjaGranica + '" min="' + donjaGranica + '" max="7" step="1" required="required"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['amount']}: <input type="number" value="${donjaGranica}" min="${donjaGranica}" max="7" step="1" required="required"/></label>`);
     }
     if (oznacenaOpcija.hasClass("trajanje")) {
-        vrijednostiOgranicenja.append('<label style="display: inline-flex; display: -webkit-inline-flex;">Trajanje: <div class="trajanje"/></label>');
+    vrijednostiOgranicenja.append(`<label style="display: inline-flex; display: -webkit-inline-flex;">${tekst['duration']}<div class="trajanje"/></label>`);
     }
     if (oznacenaOpcija.hasClass("vrijeme")) {
-        vrijednostiOgranicenja.append('<label>Vrijeme: <input type="time" required="required"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['time']}<input type="time" required="required"/></label>`);
     }
     if (oznacenaOpcija.hasClass("vikendi")) {
-        vrijednostiOgranicenja.append('<label>Uključi vikende: <input name="ukljuci_vikende" type="checkbox" value="false"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['includeWeekends']}: <input name="ukljuci_vikende" type="checkbox" value="false"/></label>`);
     }
     if (oznacenaOpcija.hasClass("nacin-pretrage")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append('<label>Da <input type="radio" name="' + jedinstveniIdentifikator + '" value="true"/></label>');
-        vrijednostiOgranicenja.append('<label>Ne <input type="radio" name="' + jedinstveniIdentifikator + '" value="false" checked="checked"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['yes']} <input type="radio" name="${jedinstveniIdentifikator}" value="true"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['no']} <input type="radio" name="${jedinstveniIdentifikator}" value="false" checked="checked"/></label>`);
     }
     if (oznacenaOpcija.hasClass("3-pohadjanje")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append('<label>Obvezno <input type="radio" name="' + jedinstveniIdentifikator + '" value="da"/></label>');
-        vrijednostiOgranicenja.append('<label>Opcionalno <input type="radio" name="' + jedinstveniIdentifikator + '" value="mozda" checked="checked"/></label>');
-        vrijednostiOgranicenja.append('<label>Zabranjeno <input type="radio" name="' + jedinstveniIdentifikator + '" value="ne" checked="checked"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['mandatory']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['optional']} <input type="radio" name="${jedinstveniIdentifikator}" value="mozda" checked="checked"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['excluded']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
     }
     if (oznacenaOpcija.hasClass("2-pohadjanje")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append('<label>Obvezna grupa <input type="radio" name="' + jedinstveniIdentifikator + '" value="da"/></label>');
-        vrijednostiOgranicenja.append('<label>Ne pristaje <input type="radio" name="' + jedinstveniIdentifikator + '" value="ne" checked="checked"/></label>');
+        vrijednostiOgranicenja.append(`<label>${tekst['mandatoryClass']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['doesNotFit']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
     }    
     var kontrolaSTrajanjem = $(".trajanje", vrijednostiOgranicenja);
     if (kontrolaSTrajanjem.length !== 0) {
@@ -305,14 +302,14 @@ $(document).ready(function() {
         modal: true,
         closeOnEscape: false,
         buttons: {
-            "Dodaj ograničenje": dodajOgranicenje,
-            "Natrag": ispitajIspravnostOgranicenja
+            [`${tekst['addRule']}`]: dodajOgranicenje,  //  dinamičko definiranje ključeva objekta se definira tako da se stavi izraz koji se treba evaluirati unutar uglatih zagrada
+            [`${tekst['close']}`]: ispitajIspravnostOgranicenja
         }
     });
 
     $("#tipka-ogranicenja").click(function() {
         $("#forma-ogranicenja select.predmeti").each(function() {     // brisanje ograničenja nad predmetima koje je korisnik ispisao
-            if ($(this).val() !== "" && $(this).val() !== "any" && $('#upisani > option[value="' + $(this).val() + '"]').length === 0) {
+            if ($(this).val() !== "" && $(this).val() !== "any" && $(`#upisani > option[value="${$(this).val()}"]`).length === 0) {
                 $(this).parent().parent().parent().remove();
             }
         });
@@ -324,9 +321,7 @@ $(document).ready(function() {
             if (prazniElement.length !== 0) {
                 selectbox.append(prazniElement);
             }
-            $("#upisani > option").each(function(){
-                selectbox.append('<option value="' + $(this).val() + '">' + $(this).val() + '</option>');
-            });
+            selectbox.append($("#upisani > option").clone());
             $(this).val(oznacenaVrijednost);
         });
         dialog.dialog( "open" );
@@ -338,7 +333,7 @@ $(document).ready(function() {
 
     $("#forma-ogranicenja").on( "change", "div > label > select", function() {
         if ($(this).val() === "pohadjanjeTermina" && $("#upisani > option").length === 0) {
-            alert("Odabrano pravilo se ne može definirati ako nije upisan nijedan predmet!");
+            alert(`${tekst['noCoursesSelectedError']}`);
             $(this).val($("option:first", $(this)).val());
         }
         else {
@@ -352,7 +347,7 @@ $(document).ready(function() {
 
     var zadnjiNameRadioIliCheckboxElementa = null;
     var pozicijaTrenutneVrijednosti = 0;
-    $("#forma-ogranicenja > div > span > label > :input").each(function(){
+    $("#forma-ogranicenja > div > span > label > *").each(function(){
         if ($(this).hasClass("trajanje")) {
             var komponenteTrajanja = vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti].split(":");
             $(this).timesetter().setHour(komponenteTrajanja[0]).setMinute(komponenteTrajanja[1]);
@@ -380,39 +375,43 @@ $(document).ready(function() {
     });
 
     $("#forma-ogranicenja").on( "change", "span select.predmeti", function() {
-        if ($('option[value=""]', $(this)).length === 0) {  // tada se radi o odabiru obveznog ili nepristajućeg termina ili o odabiru obveznosti određene vrste nastave nekog predmeta
+        if ($(this).parent().next().children().first().hasClass("vrste")) {  // tada se radi o odabiru obveznog ili nepristajućeg termina ili o odabiru obveznosti određene vrste nastave nekog predmeta
             var kontrolaSVrstamaNastave = $(this).parent().next().children().first();
+            var dosadasnjaVrijednost = kontrolaSVrstamaNastave.val();
             kontrolaSVrstamaNastave.empty();
-            if ($("option", $(this)).filter(function() { return $(this).html() === "svaki" }).length === 0) {  // tada se radi o odabiru obveznog ili nepristajućeg termina
+            if ($('option[value=""]', $(this)).length === 0) {  // tada se radi o odabiru obveznog ili nepristajućeg termina
                 Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima[$(this).val()]).forEach(function(vrsta) {
-                    kontrolaSVrstamaNastave.append('<option value="' + vrsta + '">' + naziviVrsta[vrsta] + '</option>');
+                    kontrolaSVrstamaNastave.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
                 });
                 var kontrolaSTerminima = kontrolaSVrstamaNastave.parent().next().children().first();
                 kontrolaSTerminima.empty();
                 var terminiNastave = serijaliziraniTerminiPoVrstamaPoPredmetima[$(this).val()][kontrolaSVrstamaNastave.val()];
                 Object.keys(terminiNastave).forEach(function(val) {
                     var vrijednostTermina = Object.keys(terminiNastave[val])[0];
-                    kontrolaSTerminima.append('<option value="' + vrijednostTermina + '">' + terminiNastave[val][vrijednostTermina] + '</option>');
+                    kontrolaSTerminima.append(`<option value="${vrijednostTermina}">${terminiNastave[val][vrijednostTermina]}</option>`);
                 });
             }
             else {
-                kontrolaSVrstamaNastave.append('<option value="any">svaki</option>');
+                kontrolaSVrstamaNastave.append(`<option value="any">${tekst['anyClassType']}</option>`);
                 Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima[$(this).val()]).forEach(function(vrsta) {
-                    kontrolaSVrstamaNastave.append('<option value="' + vrsta + '">' + naziviVrsta[vrsta] + '</option>');
+                    kontrolaSVrstamaNastave.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
                 });
+            }
+            if ($(`option[value="${dosadasnjaVrijednost}"]`, kontrolaSVrstamaNastave).length !== 0) {
+                kontrolaSVrstamaNastave.val(dosadasnjaVrijednost);
             }
         }
     });
 
     $("#forma-ogranicenja").on("change", "span select.vrste", function() {
-        if ($("option", $(this)).filter(function() { return $(this).html() === "svaki" }).length === 0) {  // tada se radi o odabiru obveznog ili nepristajućeg termina
+        if ($("option", $(this)).filter(function() { return ["", "any"].indexOf($(this).val()) !== -1 }).length === 0) {  // tada se radi o odabiru obveznog ili nepristajućeg termina
             var kontrolaSPredmetima = $(this).parent().prev().children().first();
             var kontrolaSTerminima = $(this).parent().next().children().first();
             kontrolaSTerminima.empty();
             var terminiNastave = serijaliziraniTerminiPoVrstamaPoPredmetima[kontrolaSPredmetima.val()][$(this).val()];
             Object.keys(terminiNastave).forEach(function(val) {
                 var vrijednostTermina = Object.keys(terminiNastave[val])[0];
-                kontrolaSTerminima.append('<option value="' + vrijednostTermina + '">' + terminiNastave[val][vrijednostTermina] + '</option>');
+                kontrolaSTerminima.append(`<option value="${vrijednostTermina}">${terminiNastave[val][vrijednostTermina]}</option>`);
             });
         }        
     });
@@ -435,7 +434,7 @@ $(document).ready(function() {
             if (velicinaPrimarnogKljuca === 0) {
                 return true;
             }
-            var svaIstoimenaPravila = $('#forma-ogranicenja > div > label > select > option:selected[value="' + nazivVrstePravila + '"]').parent();
+            var svaIstoimenaPravila = $(`#forma-ogranicenja > div > label > select > option:selected[value="${nazivVrstePravila}"]`).parent();
             if (svaIstoimenaPravila.length === 0) {
                 return true;
             }
@@ -450,12 +449,12 @@ $(document).ready(function() {
             var listaRedovaIstoimenihPravilaSVrijednostima = [];
             svaIstoimenaPravila.parent().each(function(){
                 var vrijednostiReda = [];
-                $("label > :input, label > div", $(this).next()).each(function(index){
+                $("label > *", $(this).next()).each(function(index){
                     if (velicinaPrimarnogKljuca === index) {
                         return false;   // vrijednosti daljnih elemenata pravila su irelevantne (ne smiju biti nedefinirane, a to je već provjereno na samom početku funkcije) pa se ne treba iterirati kroz njihove kontrole
                     }
                     if ($(this).hasClass("trajanje")) {
-                        vrijednostiReda.push($("input.timePart.hours", $(this)).val() + ":" + $("input.timePart.minutes", $(this)).val());
+                        vrijednostiReda.push(`${$("input.timePart.hours", $(this)).val()}:${$("input.timePart.minutes", $(this)).val()}`);
                     }
                     else {
                         vrijednostiReda.push($(this).val());
@@ -469,7 +468,7 @@ $(document).ready(function() {
                     listaRedovaIstoimenihPravilaSVrijednostima.forEach(function(elem){
                         var nazivDanaPravila = elem[1][0];
                         if ($.inArray(nazivDanaPravila, daniSDefiniranimRupama) === -1) {
-                            alert("Postoji pravilo koje definira maksimalni broj rupa pri čemu nije postavljeno pripadajuće pravilo 'definicija rupe'");
+                            alert(`${tekst['gapDefinitionRequiredError']}`);
                             privremenoOsvijetliKontrolu(elem[0]);
                             ispravno = false;
                             return false;

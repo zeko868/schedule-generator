@@ -148,7 +148,8 @@ dohvatiCinjenice(UriResursa) :-
 	bezNastaveNaDan/1,								% bezNastaveNaDan(NazivDanaBezNastave:atom)
 	ukupniBrojDana/1,								% ukupniBrojDana(UkupniBrojDanaUTjednu:integer)
 	trajanjePutovanjaDoDrugeZgrade/1,				% trajanjePutovanjaDoDrugeZgrade(TrajanjePuta:trajanje/2)
-	upisano/1										% upisano(NazivPredmeta:atom)
+	upisano/1,										% upisano(NazivPredmeta:atom)
+	dan/3											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
 .
 
 /**
@@ -176,7 +177,7 @@ inicijalizirajTrajanjaPredmetaPoDanima() :-
 	false
 .
 
-% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom) is a fact.
+/*
 dan(1, 'ponedjeljak', true).
 dan(2, 'utorak', true).
 dan(3, 'srijeda', true).
@@ -184,6 +185,7 @@ dan(4, 'četvrtak', true).
 dan(5, 'petak', true).
 dan(6, 'subota', false).
 dan(7, 'nedjelja', false).
+*/
 
 /**
  * dohvatiRaspored(+OsnovniRaspored:atom) is failure.

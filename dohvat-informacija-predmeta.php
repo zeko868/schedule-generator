@@ -19,11 +19,16 @@ $trenutnoZimskiSemestar = time() < $ljetniSemestarPocetak;
 $nazivTrenutnogSemestra = $trenutnoZimskiSemestar ? 'zimski' : 'ljetni';
 $pocetakTrenutnogSemestra = $trenutnoZimskiSemestar ? $zimskiSemestarPocetak : $ljetniSemestarPocetak;
 
-$nazivDatoteke = "raspored_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_$studij.json";
-if (file_exists($nazivDatoteke)) {
-    $sadrzaj = file_get_contents($nazivDatoteke);
+$nazivDatotekeRasporeda = "raspored_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_$studij.json";
+$nazivDatotekePredmeta = "{$studij}_predmeti.json";
+
+if (file_exists($nazivDatotekeRasporeda)) {
+
+    $sadrzaj = file_get_contents($nazivDatotekeRasporeda);
+
     if ($sadrzaj !== false) {
         $rasporedi = json_decode($sadrzaj, true);
+        $sifrePredmeta = json_decode(file_get_contents($nazivDatotekePredmeta), true);
         return;
     }
 }
@@ -52,7 +57,7 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 $doc->loadHTML(curl_exec($ch));
 curl_close($ch);
 
-$sifreKolegija = [];
+$sifrePredmeta = [];
 
 $godine = 1;
 $semestarPosition = ($trenutnoZimskiSemestar ? 3 : 7);
@@ -79,10 +84,12 @@ while (true) {
         for ($i=1; $i<$trNum; $i+=$inkrement) {
             $tr = $trElems[$i];
             if ($novaVerzijaLibXml) {
-                $sifreKolegija[$tr->childNodes[1]->textContent] = $tr->childNodes[3]->childNodes[1]->textContent;
+                $sifra = $tr->childNodes[1]->textContent;
+                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'hrvatski' => $tr->childNodes[3]->childNodes[1]->textContent ];
             }
             else {
-                $sifreKolegija[$tr->childNodes[0]->textContent] = $tr->childNodes[2]->childNodes[1]->textContent;
+                $sifra = $tr->childNodes[0]->textContent;
+                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'hrvatski' => $tr->childNodes[2]->childNodes[1]->textContent ];
             }
         }
         //}
@@ -90,15 +97,19 @@ while (true) {
     $godine++;
 }
 $godine--;
+$hrvatskiNaziviPredmeta = [];   // radi bržeg dohvaćanja identifikatora predmeta iz pripadajućeg naziva
 $rasporedi = [];
 $obveznostNastavePoPredmetima = [];
-foreach ($sifreKolegija as $sifra => $nazivPredmeta) {
+foreach ($sifrePredmeta as $sifra => &$naziviPredmeta) {
     $ch = curl_init("https://nastava.foi.hr/public/course?study=$studij&course=$sifra&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $doc->loadHTML(curl_exec($ch));
     curl_close($ch);
 
     $obveznostPredmeta = [];
+    $informacijeDiv = $doc->getElementById('informacije');
+    $naziviPredmeta['engleski'] = $informacijeDiv->childNodes[0]->childNodes[1]->childNodes[1]->childNodes[3]->textContent;
+    $hrvatskiNaziviPredmeta[$naziviPredmeta['hrvatski']] = &$naziviPredmeta;
     $modelPracenjaDiv = $doc->getElementById('model_pracenja');
     if ($modelPracenjaDiv !== null) {   // zbog predmeta poput stručne prakse i diplomskog rada
         $redovniModelPracenjaDiv = $modelPracenjaDiv->childNodes[1]->childNodes[1]->childNodes[1]->childNodes[1];
@@ -133,8 +144,9 @@ foreach ($sifreKolegija as $sifra => $nazivPredmeta) {
             }
         }
     }
-    $obveznostNastavePoPredmetima[$nazivPredmeta] = $obveznostPredmeta;
+    $obveznostNastavePoPredmetima[$sifra] = $obveznostPredmeta;
 }
+unset($naziviPredmeta); // preporučeno nakon korištenja reference ključa i/ili vrijednosti u foreach petlji
 
 $ch = curl_init('https://nastava.foi.hr/public/schedule');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -208,12 +220,13 @@ EOS
                     }
                     $prethodniId = $stavka->scheduleId;
                     list($nazivPredmeta, $lokacija) = explode("\n", $stavka->title, -1);    // -1 označava da se zadnji element briše
+                    $sifraPredmeta = $hrvatskiNaziviPredmeta[$nazivPredmeta]['id'];
                     $vrstaNastave = $vrsteNastavePoBojama[$stavka->color];
                     if ($vrstaNastave === null) {
                         $ignorirajUnos = true;
                         continue;   // proskoči termine ostalih oblika nastave poput ispita, nadoknada i demonstratura
                     }
-                    if (isset($rasporedi[$nazivPredmeta][$vrstaNastave][$prethodniId])) {   // termin nastave koji je predviđen za studente iz više grupa treba imatu jedan zajednički identifikator, a ne da za svaku grupu je poseban - taj problem se rješava u metodi dodaj_u_raspored()
+                    if (isset($rasporedi[$sifraPredmeta][$vrstaNastave][$prethodniId])) {   // termin nastave koji je predviđen za studente iz više grupa treba imatu jedan zajednički identifikator, a ne da za svaku grupu je poseban - taj problem se rješava u metodi dodaj_u_raspored()
                         $ignorirajUnos = true;
                     }
                     else {
@@ -255,7 +268,7 @@ function dodaj_u_raspored() {
     global $zimskiSemestarPocetak;
     global $ljetniSemestarPocetak;
     global $trajanjeZimskihPraznikaTjedni;
-    global $nazivPredmeta;
+    global $sifraPredmeta;
     global $vrstaNastave;
     //global $obveznostNastavePoPredmetima;
     global $pocetakRazdoblja;
@@ -280,7 +293,7 @@ function dodaj_u_raspored() {
         //$rasporedi[$prethodniId] =
         $stavkaZaDodavanje =
             [
-                'predmet' => $nazivPredmeta,
+                'predmet' => $sifraPredmeta,
                 'vrsta' => $vrstaNastave,
                 //'obveznost' => $obveznostPredmeta==='all' || in_array($vrstaNastave, $obveznostPredmeta),
                 'obveznost' => false,
@@ -298,49 +311,49 @@ function dodaj_u_raspored() {
                     'prostorija' => $prostorija
                 ]
             ];
-        if (!isset($rasporedi[$nazivPredmeta][$vrstaNastave]) || !in_array($stavkaZaDodavanje, $rasporedi[$nazivPredmeta][$vrstaNastave])) {
-            $rasporedi[$nazivPredmeta][$vrstaNastave][$prethodniId] = $stavkaZaDodavanje;
+        if (!isset($rasporedi[$sifraPredmeta][$vrstaNastave]) || !in_array($stavkaZaDodavanje, $rasporedi[$sifraPredmeta][$vrstaNastave])) {
+            $rasporedi[$sifraPredmeta][$vrstaNastave][$prethodniId] = $stavkaZaDodavanje;
         }
     }
 }
 
 function pronadjiDetaljeOObveznostiNastave($ispitivaniTekst) {
     global $obveznostPredmeta;
-    if (preg_match('/(?:(?:prisustv?o|prisut(?:st)?vo)(?:vanje)?|prisutnost|dola(?:znost|sci)|nazočnost|izostan(?:aka?|ka|ci))(?:(.*nastav(?:i|e))|(?:.*?(?:(predavanj(?:im)?a)|(seminar(?:ima|e|a)|(?:sem\.|seminarsk(?:im|e|ih)) vježb(?:ama|e|i|a))|(auditorij(?:ima|e|a)|(?:aud\.|auditorn(?:im|e|ih)) vježb(?:ama|e|i|a))|(labos(?:e|ima|a)|(?:laboratorijsk(?:im|e|ih)|lab\.) vježb(?:ama|e|i|a))|(vježb(?:ama|e|i|a))))+)/i', $ispitivaniTekst, $rezultat)) {
+    if (preg_match('/(?:(?:prisustv?o|prisut(?:st)?vo)(?:vanje)?|prisutnost|dola(?:znost|sci)|nazočnost|izostan(?:aka?|ka|ci))(?:(?:.*?(?:(predavanj(?:ima|u))|(seminar(?:ima|e|a|u)|(?:sem\.|seminarsk(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(auditorij(?:ima|e|a)|(?:aud\.|auditorn(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(labos(?:e|ima|a)|(?:laboratorijsk(?:im|e|ih|oj)|lab\.) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(vježb(?:ama|e|i|a))))+|(.*nastav(?:i|e)))/i', $ispitivaniTekst, $rezultat)) {
         /*
         foreach ([4, 8] as $stupacGranice) {
             $tr->childNodes[$stupacGranice]->textContent;
         }
         */
-        if (!empty($rezultat[1])) {
+        if (!empty($rezultat[6])) {
             $obveznostPredmeta = 'all';
             return true;   // nema daljnje potrebe za provjerom
         }
         else {
-            if (!empty($rezultat[2])) {
+            if (!empty($rezultat[1])) {
                 $obveznostPredmeta[] = 'p';
             }
-            if (!empty($rezultat[3])) {
+            if (!empty($rezultat[2])) {
                 $obveznostPredmeta[] = 's';
             }
-            if (!empty($rezultat[4])) {
+            if (!empty($rezultat[3])) {
                 $obveznostPredmeta[] = 'av';
             }
-            if (!empty($rezultat[5])) {
+            if (!empty($rezultat[4])) {
                 $obveznostPredmeta[] = 'lv';
             }
-            if (!empty($rezultat[6])) {
+            if (!empty($rezultat[5])) {
                 $obveznostPredmeta[] = 'v'; // tzk i jezici
             }
         }
     }
 }
 
-foreach ($obveznostNastavePoPredmetima as $nazivPredmeta => $obveznostNastave) {
+foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
     if ($obveznostNastave === 'all') {
-        foreach (array_keys($rasporedi[$nazivPredmeta]) as $vrstaNastave) {
-            foreach (array_keys($rasporedi[$nazivPredmeta][$vrstaNastave]) as $scheduleId) {
-                $rasporedi[$nazivPredmeta][$vrstaNastave][$scheduleId]['obveznost'] = true;
+        foreach (array_keys($rasporedi[$sifraPredmeta]) as $vrstaNastave) {
+            foreach (array_keys($rasporedi[$sifraPredmeta][$vrstaNastave]) as $scheduleId) {
+                $rasporedi[$sifraPredmeta][$vrstaNastave][$scheduleId]['obveznost'] = true;
             }
         }
     }
@@ -348,10 +361,10 @@ foreach ($obveznostNastavePoPredmetima as $nazivPredmeta => $obveznostNastave) {
         $notFound = [];
         $found = [];
         foreach ($obveznostNastave as $obveznaVrsta) {
-            if (array_key_exists($obveznaVrsta, $rasporedi[$nazivPredmeta])) {
+            if (array_key_exists($obveznaVrsta, $rasporedi[$sifraPredmeta])) {
                 $found[]= $obveznaVrsta;
-                foreach (array_keys($rasporedi[$nazivPredmeta][$obveznaVrsta]) as $scheduleId) {
-                    $rasporedi[$nazivPredmeta][$obveznaVrsta][$scheduleId]['obveznost'] = true;
+                foreach (array_keys($rasporedi[$sifraPredmeta][$obveznaVrsta]) as $scheduleId) {
+                    $rasporedi[$sifraPredmeta][$obveznaVrsta][$scheduleId]['obveznost'] = true;
                 }
             }
             else {
@@ -359,7 +372,7 @@ foreach ($obveznostNastavePoPredmetima as $nazivPredmeta => $obveznostNastave) {
             }
         }
         if (!empty($notFound)) {
-            $josNeobvezni = array_diff(array_keys($rasporedi[$nazivPredmeta]), $found);
+            $josNeobvezni = array_diff(array_keys($rasporedi[$sifraPredmeta]), $found);
             foreach ($notFound as $nedodijeljenaVrsta) {
                 $substitut = null;
                 switch ($nedodijeljenaVrsta) {
@@ -388,8 +401,8 @@ foreach ($obveznostNastavePoPredmetima as $nazivPredmeta => $obveznostNastave) {
                 }
                 if (isset($substitut)) {
                     unset($josNeobvezni[array_search($substitut, $josNeobvezni)]);
-                    foreach (array_keys($rasporedi[$nazivPredmeta][$substitut]) as $scheduleId) {
-                        $rasporedi[$nazivPredmeta][$substitut][$scheduleId]['obveznost'] = true;
+                    foreach (array_keys($rasporedi[$sifraPredmeta][$substitut]) as $scheduleId) {
+                        $rasporedi[$sifraPredmeta][$substitut][$scheduleId]['obveznost'] = true;
                     }
                 }
             }
@@ -411,6 +424,9 @@ function dohvatiStavkeRasporeda($rasporedi) {
 
 //echo json_encode(array_values($rasporedi), JSON_UNESCAPED_UNICODE);
 
-file_put_contents($nazivDatoteke, json_encode($rasporedi = dohvatiStavkeRasporeda($rasporedi), JSON_UNESCAPED_UNICODE));
+file_put_contents($nazivDatotekeRasporeda, json_encode($rasporedi = dohvatiStavkeRasporeda($rasporedi), JSON_UNESCAPED_UNICODE));
 
+if (!file_exists($nazivDatotekePredmeta)) {
+    file_put_contents($nazivDatotekePredmeta, json_encode($sifrePredmeta, JSON_UNESCAPED_UNICODE));
+}
 ?>

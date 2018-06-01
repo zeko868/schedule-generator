@@ -86,9 +86,11 @@ input[type="number"] {
     width: 99.95%;
 }
 
-#study {
+#home > * {
     width: auto;
     margin: 0 auto;
+    text-align: center;
+    display: block;
 }
 
 #study ~ button[type="submit"] {
@@ -107,4 +109,24 @@ input[type="number"] {
 
 .divTimeSetterContainer input.hours, .divTimeSetterContainer input.minutes {
     width: 30px;
+}
+
+input[type="radio"] {
+    position: relative;
+    top: 1px;
+}
+
+#legend {
+    margin: auto;
+}
+
+.color-name {
+    margin-left: 2px;
+    margin-right: 10px;
+}
+
+.color-box {
+    width: 20px;
+    height: 20px;
+    float: left;
 }
