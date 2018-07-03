@@ -289,15 +289,9 @@ serijalizirajUJson(SerijaliziraniObjekt) :-
 	generiraniRaspored(Predmet, Vrsta, termin(NazivDana, vrijeme(Hstart, Mstart), vrijeme(Hkraj, Mkraj)), lokacija(Zgrada, Prostorija)),
 	format(string(Pocetak), "~|~`0t~d~2+:~|~`0t~d~2+", [Hstart, Mstart]),
 	format(string(Kraj), "~|~`0t~d~2+:~|~`0t~d~2+", [Hkraj, Mkraj]),
-	(
-	obveznost(Predmet, Vrsta) ->
-		Obveznost = @(true)
-		;
-		Obveznost = @(false)
-	),
 	odrzavanje(Predmet, Vrsta, Wstart, Wkraj),
 	dan(RedniBrojDana, NazivDana, _),
-	with_output_to(string(SerijaliziraniObjekt), json_write(current_output, json{predmet:Predmet,vrsta:Vrsta,obveznost:Obveznost,razdoblje:json{start:Wstart,kraj:Wkraj},termin:json{dan:RedniBrojDana,start:Pocetak,kraj:Kraj},lokacija:json{zgrada:Zgrada,prostorija:Prostorija}}, [width(0)]))	%bolje performanse daje korištenje terma string/1 umjesto atom/1, ali rezultat kasnije zahtijeva izradu vlastite varijante atomic_list_concat/3 predikata za stringove
+	with_output_to(string(SerijaliziraniObjekt), json_write(current_output, json{predmet:Predmet,vrsta:Vrsta,razdoblje:json{start:Wstart,kraj:Wkraj},termin:json{dan:RedniBrojDana,start:Pocetak,kraj:Kraj},lokacija:json{zgrada:Zgrada,prostorija:Prostorija}}, [width(0)]))	%bolje performanse daje korištenje terma string/1 umjesto atom/1, ali rezultat kasnije zahtijeva izradu vlastite varijante atomic_list_concat/3 predikata za stringove
 .
 
 /**

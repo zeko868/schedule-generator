@@ -19,8 +19,8 @@ $trenutnoZimskiSemestar = time() < $ljetniSemestarPocetak;
 $nazivTrenutnogSemestra = $trenutnoZimskiSemestar ? 'zimski' : 'ljetni';
 $pocetakTrenutnogSemestra = $trenutnoZimskiSemestar ? $zimskiSemestarPocetak : $ljetniSemestarPocetak;
 
-$nazivDatotekeRasporeda = "raspored_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_$studij.json";
-$nazivDatotekePredmeta = "{$studij}_predmeti.json";
+$nazivDatotekeRasporeda = "raspored_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_{$studij}.json";
+$nazivDatotekePredmeta = "predmeti_{$nazivTrenutnogSemestra}_{$studij}.json";
 
 if (file_exists($nazivDatotekeRasporeda)) {
 
@@ -33,14 +33,7 @@ if (file_exists($nazivDatotekeRasporeda)) {
     }
 }
 
-$libXmlInfo = `php --ri libxml`;
-foreach (explode("\n", $libXmlInfo) as $line) {
-    if (strpos($line, 'Compiled Version') !== false) {
-        $libXmlVersion = explode(' => ', $line)[1];
-        $novaVerzijaLibXml = version_compare($libXmlVersion, '2.9.5') >= 0;
-        break;
-    }
-}
+$novaVerzijaLibXml = version_compare(phpversion('libxml'), '2.9.5') >= 0;
 
 $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
 
@@ -427,6 +420,9 @@ function dohvatiStavkeRasporeda($rasporedi) {
 file_put_contents($nazivDatotekeRasporeda, json_encode($rasporedi = dohvatiStavkeRasporeda($rasporedi), JSON_UNESCAPED_UNICODE));
 
 if (!file_exists($nazivDatotekePredmeta)) {
-    file_put_contents($nazivDatotekePredmeta, json_encode($sifrePredmeta, JSON_UNESCAPED_UNICODE));
+    file_put_contents($nazivDatotekePredmeta, json_encode($sifrePredmeta = array_map(function($detaljiPredmeta){unset($detaljiPredmeta['id']); return $detaljiPredmeta;}, $sifrePredmeta), JSON_UNESCAPED_UNICODE));
+}
+else {
+    $sifrePredmeta = file_get_contents($nazivDatotekePredmeta);
 }
 ?>
