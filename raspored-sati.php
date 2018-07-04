@@ -1,4 +1,189 @@
 <?php
+    function dohvati_sljedeci_zadovoljavajuci_raspored() {
+        global $sifrePredmeta, $boje, $vrsteNastavePoBojama, $studij, $naziviDana, $jezik, $serijaliziraniTerminiPoVrstamaPoPredmetima, $brojKombinacijaRasporeda;
+        $trajanjeTjedna = 7*24*60*60;
+        $trajanjeDana = 24*60*60;
+        $boje = [
+            'p' => '#CE003D',
+            's' => '#006A8D',
+            'av' => '#00A4A7',
+            'lv' => '#641A45',
+            'v' => '#5F6062'
+        ];
+        $vrsteNastavePoBojama = array_flip($boje);
+        ini_set('memory_limit', -1);
+        set_time_limit(0);
+        $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
+        require 'dohvat-informacija-predmeta.php';
+        if (isset($_POST['upisano'])) {
+            $descriptorspec = array(
+                array('pipe', 'r'),
+                array('pipe', 'w'),
+                array('pipe', 'w')
+            );
+            $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+            // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
+            if ($jestWindowsLjuska) {
+                $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
+            }
+            else {
+                $env = array(
+                    'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
+                );
+                $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, NULL, $env);
+            }
+            $cmdUnosPredmetaTeOgranicenja = '';
+            foreach ($_POST['upisano'] as $sifraPredmeta) {
+                $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$sifraPredmeta')),";
+            }
+            if (isset($_POST['prosli_raspored'])) {
+                foreach ($_POST['prosli_raspored'] as $stavkaRasporeda) {
+                    $cmdUnosPredmetaTeOgranicenja .= "asserta(prosliRaspored($stavkaRasporeda)),";
+                }
+            }
+            $cmdTrazi = 'dohvatiRaspored(\'false\')';
+            if (isset($_POST['ogranicenja'])) {
+                $cmdZadnjaOgranicenja = '';
+                $prioritetniRedSPravilimaPohadjanjaNastave = [[],[],[],[]];
+                $odabraniTermini = [];
+                $zabranjeniTermini = [];
+                foreach ($_POST['ogranicenja'] as $ogranicenje) {
+                    if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
+                        $cmdTrazi = $ogranicenje;
+                    }
+                    else if (preg_match('/^pohadjanjeNastave\(\d+,\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
+                        $biloKojiPredmet = $matches[1] === '';
+                        $biloKojaVrsta = $matches[2] === 'any';
+                        if ($biloKojiPredmet && $biloKojaVrsta) {
+                            $prioritet = 0;
+                        }
+                        else if ($biloKojaVrsta) {
+                            $prioritet = 1;
+                        }
+                        else if ($biloKojiPredmet) {
+                            $prioritet = 2;
+                        }
+                        else {
+                            $prioritet = 3;
+                        }
+                        $prioritetniRedSPravilimaPohadjanjaNastave[$prioritet][] = "ignore($ogranicenje)";
+                    }
+                    else {
+                        $ogranicenje = preg_replace("/,''|'',/", '', $ogranicenje, -1, $brojZamjena);
+                        if ($brojZamjena === 0) {
+                            $cmdUnosPredmetaTeOgranicenja .= "(clause($ogranicenje, _) -> ignore($ogranicenje) ; asserta($ogranicenje)),";
+                        }
+                        else {
+                            $cmdZadnjaOgranicenja .= "ignore($ogranicenje),";
+                        }
+                    }
+                }
+                for ($i=0; $i<4; $i++) {
+                    if (!empty($prioritetniRedSPravilimaPohadjanjaNastave[$i])) {
+                        $cmdZadnjaOgranicenja .= implode(',', $prioritetniRedSPravilimaPohadjanjaNastave[$i]) . ',';
+                    }
+                
+                }
+                $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
+            }
+            $cmdTrazi = "ignore($cmdTrazi)";
+            $cmdUnosDana = '';
+            for ($i=1; $i<=5; $i++) {
+                $nazivDana = $naziviDana[$i-1];
+                $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', true)),";
+            }
+            for ($i=6; $i<=7; $i++) {
+                $nazivDana = $naziviDana[$i-1];
+                $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', false)),";
+            }
+            $putanja = dirname($_SERVER['PHP_SELF']);
+            $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
+            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
+            if ($jestWindowsLjuska) {
+                $cmd = iconv('utf-8', 'windows-1250', $cmd);
+            }
+            fwrite($pipes[0], $cmd);
+            fclose($pipes[0]);
+            $rasporedi = null;
+            $brojKombinacijaRasporeda = 0;
+            while ($rezultat = fread($pipes[1], 8192)) {
+                if ($jestWindowsLjuska) {
+                    $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
+                }
+                foreach (explode("\r\n", $rezultat) as $serijaliziraniRaspored) {
+                    if (empty($serijaliziraniRaspored)) {
+                        continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
+                    }
+                    else if (preg_match('/^false\./', $serijaliziraniRaspored)) {
+                        break 2;
+                    }
+                    $rasporedi = json_decode($serijaliziraniRaspored, true);
+                    $brojKombinacijaRasporeda = 1;
+                }
+            }
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+        }
+        else {
+            $terminiPoVrstamaPoPredmetima = [];
+            foreach ($rasporedi as $stavka) {
+                $predmet = $stavka['predmet'];
+                $vrsta = $stavka['vrsta'];
+                $termin = $stavka['termin'];
+                $nazivDana = $naziviDana[$termin['dan']-1];
+                $skraceniNazivDana = substr($nazivDana, 0, 3);
+                $vrijemePocetka = $termin['start'];
+                $vrijemePocetkaSaZarezom = str_replace(':', ',', $vrijemePocetka);
+                $vrijemeZavrsetka = $termin['kraj'];
+                $vrijemeZavrsetkaSaZarezom = str_replace(':', ',', $vrijemeZavrsetka);
+                $lokacija = $stavka['lokacija'];
+                $zgrada = $lokacija['zgrada'];
+                $prostorija = $lokacija['prostorija'];
+                $terminiPoVrstamaPoPredmetima[$predmet][$vrsta][] = ["terminILokacija(termin('$nazivDana',vrijeme($vrijemePocetkaSaZarezom),vrijeme($vrijemeZavrsetkaSaZarezom)),lokacija('$zgrada','$prostorija'))" => "$skraceniNazivDana $vrijemePocetka-$vrijemeZavrsetka, $zgrada > $prostorija"];
+            }
+            foreach (array_keys($boje) as $vrsta) {
+                $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
+            }
+            $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
+        }
+        if ($rasporedi === null) {
+            echo 'null';
+        }
+        else {
+            $stavkaId = 0;
+            $kodRasporeda = [];
+            foreach ($rasporedi as $stavka) {
+                $sifraPredmeta = $stavka['predmet'];
+                $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
+                $pocetniTjedan = $stavka['razdoblje']['start'];
+                $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
+                $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
+                $pomakOdPocetkaTjedna = $stavka['termin']['dan'] - 1;
+                $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
+                $vrijemePocetka = $stavka['termin']['start'];
+                $vrijemeZavrsetka = $stavka['termin']['kraj'];
+                $boja = $boje[$stavka['vrsta']];
+                $obradjeniZimskiPraznici = false;
+                for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
+                    if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
+                        $odrzavanje += 2*$trajanjeTjedna;
+                        $obradjeniZimskiPraznici = true;
+                    }
+                    $datumOdrzavanja = date('Y-m-d', $odrzavanje);
+                    $lokacija = $stavka['lokacija'];
+                    $kodRasporeda[] =  "{\"itemid\":$stavkaId, \"subjectid\":$sifraPredmeta, \"title\": \"$naziviPredmeta[$jezik]\\n$lokacija[zgrada] > $lokacija[prostorija]\", \"start\": \"{$datumOdrzavanja}T{$vrijemePocetka}:00\", \"end\": \"{$datumOdrzavanja}T{$vrijemeZavrsetka}:00\", \"color\": \"$boja\"}";
+                    $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
+                    //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
+                }
+                $stavkaId++;
+            }
+            echo '[';
+            echo implode(',', $kodRasporeda);
+            echo ']';
+        }
+    }
+
     date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
     session_start();
     if (isset($_GET['language'])) {
@@ -14,6 +199,13 @@
     }
     $tekst = json_decode(file_get_contents("i18n_$jezik.json"));
     $naziviDana = $tekst->daysOfTheWeek;
+
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header("Content-Type: application/json");
+        $studij = $_GET['study_id'];
+        dohvati_sljedeci_zadovoljavajuci_raspored();
+        exit();
+    }
 ?>
 <!DOCTYPE html>
 <html>
@@ -38,187 +230,16 @@
             var tekst = <?php echo json_encode($tekst->other); ?>;
             var kodoviRasporeda = [
             <?php
-                $trajanjeTjedna = 7*24*60*60;
-                $trajanjeDana = 24*60*60;
-                $boje = [
-                    'p' => '#CE003D',
-                    's' => '#006A8D',
-                    'av' => '#00A4A7',
-                    'lv' => '#641A45',
-                    'v' => '#5F6062'
-                ];
-                ini_set('memory_limit', -1);
-                set_time_limit(0);
-                $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
-                require 'dohvat-informacija-predmeta.php';
-                if (isset($_POST['upisano'])) {
-                    $descriptorspec = array(
-                        array('pipe', 'r'),
-                        array('pipe', 'w'),
-                        array('pipe', 'w')
-                    );
-                    $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
-                    // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
-                    if ($jestWindowsLjuska) {
-                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
-                    }
-                    else {
-                        $env = array(
-                            'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
-                        );
-                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, NULL, $env);
-                    }
-                    $cmdUnosPredmetaTeOgranicenja = '';
-                    foreach ($_POST['upisano'] as $sifraPredmeta) {
-                        $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$sifraPredmeta')),";
-                    }
-                    $cmdTrazi = 'dohvatiRaspored(\'false\')';
-                    if (isset($_POST['ogranicenja'])) {
-                        $cmdZadnjaOgranicenja = '';
-                        $prioritetniRedSPravilimaPohadjanjaNastave = [[],[],[],[]];
-                        $odabraniTermini = [];
-                        $zabranjeniTermini = [];
-                        foreach ($_POST['ogranicenja'] as $ogranicenje) {
-                            if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
-                                $cmdTrazi = $ogranicenje;
-                            }
-                            else if (preg_match('/^pohadjanjeNastave\(\d+,\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
-                                $biloKojiPredmet = $matches[1] === '';
-                                $biloKojaVrsta = $matches[2] === 'any';
-                                if ($biloKojiPredmet && $biloKojaVrsta) {
-                                    $prioritet = 0;
-                                }
-                                else if ($biloKojaVrsta) {
-                                    $prioritet = 1;
-                                }
-                                else if ($biloKojiPredmet) {
-                                    $prioritet = 2;
-                                }
-                                else {
-                                    $prioritet = 3;
-                                }
-                                $prioritetniRedSPravilimaPohadjanjaNastave[$prioritet][] = "ignore($ogranicenje)";
-                            }
-                            else {
-                                $ogranicenje = preg_replace("/,''|'',/", '', $ogranicenje, -1, $brojZamjena);
-                                if ($brojZamjena === 0) {
-                                    $cmdUnosPredmetaTeOgranicenja .= "(clause($ogranicenje, _) -> ignore($ogranicenje) ; asserta($ogranicenje)),";
-                                }
-                                else {
-                                    $cmdZadnjaOgranicenja .= "ignore($ogranicenje),";
-                                }
-                            }
-                        }
-                        for ($i=0; $i<4; $i++) {
-                            if (!empty($prioritetniRedSPravilimaPohadjanjaNastave[$i])) {
-                                $cmdZadnjaOgranicenja .= implode(',', $prioritetniRedSPravilimaPohadjanjaNastave[$i]) . ',';
-                            }
-                        
-                        }
-                        $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
-                    }
-                    $cmdTrazi = "ignore($cmdTrazi)";
-                    $cmdUnosDana = '';
-                    for ($i=1; $i<=5; $i++) {
-                        $nazivDana = $naziviDana[$i-1];
-                        $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', true)),";
-                    }
-                    for ($i=6; $i<=7; $i++) {
-                        $nazivDana = $naziviDana[$i-1];
-                        $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', false)),";
-                    }
-                    $putanja = dirname($_SERVER['PHP_SELF']);
-                    $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
-                    if ($jestWindowsLjuska) {
-                        $cmd = iconv('utf-8', 'windows-1250', $cmd);
-                    }
-                    fwrite($pipes[0], $cmd);
-                    fclose($pipes[0]);
-                    $rasporedi = [];
-                    $brojKombinacijaRasporeda = 0;
-                    while ($rezultat = fread($pipes[1], 8192)) {
-                        if ($jestWindowsLjuska) {
-                            $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
-                        }
-                        foreach (explode("\r\n", $rezultat) as $serijaliziraniRaspored) {
-                            if (empty($serijaliziraniRaspored)) {
-                                continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
-                            }
-                            else if (preg_match('/^false\./', $serijaliziraniRaspored)) {
-                                break 2;
-                            }
-                            $rasporedi[] = json_decode($serijaliziraniRaspored, true);
-                            $brojKombinacijaRasporeda++;
-                        }
-                    }
-                    fclose($pipes[1]);
-                    fclose($pipes[2]);
-                    proc_close($process);
-                }
-                else {
-                    $terminiPoVrstamaPoPredmetima = [];
-                    foreach ($rasporedi as $stavka) {
-                        $predmet = $stavka['predmet'];
-                        $vrsta = $stavka['vrsta'];
-                        $termin = $stavka['termin'];
-                        $nazivDana = $naziviDana[$termin['dan']-1];
-                        $skraceniNazivDana = substr($nazivDana, 0, 3);
-                        $vrijemePocetka = $termin['start'];
-                        $vrijemePocetkaSaZarezom = str_replace(':', ',', $vrijemePocetka);
-                        $vrijemeZavrsetka = $termin['kraj'];
-                        $vrijemeZavrsetkaSaZarezom = str_replace(':', ',', $vrijemeZavrsetka);
-                        $lokacija = $stavka['lokacija'];
-                        $zgrada = $lokacija['zgrada'];
-                        $prostorija = $lokacija['prostorija'];
-                        $terminiPoVrstamaPoPredmetima[$predmet][$vrsta][] = ["terminILokacija(termin('$nazivDana',vrijeme($vrijemePocetkaSaZarezom),vrijeme($vrijemeZavrsetkaSaZarezom)),lokacija('$zgrada','$prostorija'))" => "$skraceniNazivDana $vrijemePocetka-$vrijemeZavrsetka, $zgrada > $prostorija"];
-                    }
-                    foreach (array_keys($boje) as $vrsta) {
-                        $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
-                    }
-                    $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
-                    $rasporedi = [$rasporedi];
-                }
-                foreach ($rasporedi as $raspored) {
-                    $kodRasporeda = '';
-                    foreach ($raspored as $stavka) {
-                        $sifraPredmeta = $stavka['predmet'];
-                        $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                        $pocetniTjedan = $stavka['razdoblje']['start'];
-                        $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
-                        $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
-                        $pomakOdPocetkaTjedna = $stavka['termin']['dan'] - 1;
-                        $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
-                        $vrijemePocetka = $stavka['termin']['start'];
-                        $vrijemeZavrsetka = $stavka['termin']['kraj'];
-                        $boja = $boje[$stavka['vrsta']];
-                        $obradjeniZimskiPraznici = false;
-                        for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
-                            if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
-                                $odrzavanje += 2*$trajanjeTjedna;
-                                $obradjeniZimskiPraznici = true;
-                            }
-                            $datumOdrzavanja = date('Y-m-d', $odrzavanje);
-                            $lokacija = $stavka['lokacija'];
-                            $kodRasporeda .= "{title: '$naziviPredmeta[$jezik]\\n$lokacija[zgrada] > $lokacija[prostorija]', start: '{$datumOdrzavanja}T{$vrijemePocetka}:00', end: '{$datumOdrzavanja}T{$vrijemeZavrsetka}:00', color: '$boja'},";
-                            $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
-                            //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
-                        }
-                    }
-                    echo '[';
-                    echo $kodRasporeda;
-                    echo '],';
-                }
+            dohvati_sljedeci_zadovoljavajuci_raspored();
             ?>
             ];
             <?php
+            echo 'var josKombinacija = ' . ($brojKombinacijaRasporeda===1 ? 'true' : 'false') . ';';
+            echo 'var vrsteNastavePoBojama = ' . json_encode($vrsteNastavePoBojama) . ';';
             if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
                 $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
             }
             echo "var serijaliziraniTerminiPoVrstamaPoPredmetima = $serijaliziraniTerminiPoVrstamaPoPredmetima;";
-            if (isset($brojKombinacijaRasporeda)) {
-                echo "var brojKombinacijaRasporeda = $brojKombinacijaRasporeda;";
-            }
             ?>
         </script>
         <form action="<?php echo "$_SERVER[PHP_SELF]?study_id=$studij";?>" method="POST" id="odabir-predmeta">
@@ -256,11 +277,13 @@
                     if ($brojKombinacijaRasporeda>0) {
                 ?>
                 <nav>
-                    <button type="button" id="prvi" class="ui-button ui-corner-all ui-widget">&lt;&lt;</button>
-                    <button type="button" id="prethodni" class="ui-button ui-corner-all ui-widget">&lt;</button>
-                    <span><span id="trenutna-kombinacija">1</span> <?php echo $tekst->outOf; ?> <?php echo $brojKombinacijaRasporeda;?></span>
+                    <button type="button" id="prvi" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&lt;&lt;</button>
+                    <button type="button" id="prethodni" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&lt;</button>
+                    <span><span id="trenutna-kombinacija">1</span> <?php echo $tekst->outOf; ?> <span id="ukupno-kombinacija">1</span></span>
                     <button type="button" id="sljedeci" class="ui-button ui-corner-all ui-widget">&gt;</button>
-                    <button type="button" id="posljedni" class="ui-button ui-corner-all ui-widget">&gt;&gt;</button>
+                    <button type="button" id="posljedni" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&gt;&gt;</button>
+                    <br/>
+                    <span id="possible-incompleteness-note"><?php echo $tekst->other->soFar; ?></span>
                 </nav>
                 <?php
                     }
@@ -289,7 +312,15 @@
                     ?>
                 </select>
             </div>
-            <select name="ogranicenja[]" id="ogranicenja" multiple="multiple"></select>
+            <select name="ogranicenja[]" id="ogranicenja" multiple="multiple">
+            <?php
+                if (isset($_POST['ogranicenja'])) {
+                    foreach ($_POST['ogranicenja'] as $ogranicenje) {
+                        echo "<option value=\"$ogranicenje\"></option>";
+                    }
+                }
+            ?>
+            </select>
             <input type="hidden" name="serijalizirana-forma-ogranicenja" id="serijalizirana-forma-ogranicenja"/>
             <input type="hidden" name="serijalizirani-termini-po-vrstama-po-predmetima" id="serijalizirani-termini-po-vrstama-po-predmetima"/>
         </form>

@@ -58,7 +58,11 @@
         "addRule":"Dodaj novo pravilo",
         "close":"Natrag",
         "noCoursesSelectedError":"Odabrano pravilo se ne može definirati ako nije upisan nijedan predmet!",
-        "gapDefinitionRequiredError":"Postoji pravilo koje definira maksimalni broj rupa pri čemu nije za navedeno definirano pripadajuće trajanje rupe"
+        "gapDefinitionRequiredError":"Postoji pravilo koje definira maksimalni broj rupa pri čemu nije za navedeno definirano pripadajuće trajanje rupe",
+        "ajaxRequestFailedError":"Dogodila se pogreška kod pokušaja pronalaska sljedećeg zadovoljavajućeg rasporeda!",
+        "soFar":"do sad",
+        "workingOnIt":"pretražuje se...",
+        "endReached":"to je sve!"
     },
     "typeOfClasses":{
         "p":"predavanja",

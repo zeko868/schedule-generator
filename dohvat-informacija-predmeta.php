@@ -2,8 +2,8 @@
 /*  // otkomentirati sljedeće linije u slučaju da se skripta želi koristiti samostalno za generiranje podataka o terminima nastave
 date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
 $studij = 2831;     // 2831 je šifra DS INF smjera
+$vrstaNastavePoBojama = ['#CE003D' => 'p', '#006A8D' => 's', '#00A4A7' => 'av', '#641A45' => 'lv', '#5F6062' => 'v'];
 */
-$vrsteNastavePoBojama = array_flip($boje);
 $zimskiSemestarPocetak = strtotime('22.09.' . date('Y'));
 $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
 if (time() < $zimskiSemestarPocetak) {

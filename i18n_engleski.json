@@ -58,7 +58,11 @@
         "addRule":"Add new rule",
         "close":"Close",
         "noCoursesSelectedError":"In order to set selected rule, there should be enrolled courses!",
-        "gapDefinitionRequiredError":"There is a rule that defines largest allowed amount of gaps, but belonging gap definition still hasn't been set!"
+        "gapDefinitionRequiredError":"There is a rule that defines largest allowed amount of gaps, but belonging gap definition still hasn't been set!",
+        "ajaxRequestFailedError":"An error has occurred while trying to fetch next matching timetable!",
+        "soFar":"so far",
+        "workingOnIt":"working on it...",
+        "endReached":"that's all!"
     },
     "typeOfClasses":{
         "p":"lectures",

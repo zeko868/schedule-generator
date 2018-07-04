@@ -149,7 +149,8 @@ dohvatiCinjenice(UriResursa) :-
 	ukupniBrojDana/1,								% ukupniBrojDana(UkupniBrojDanaUTjednu:integer)
 	trajanjePutovanjaDoDrugeZgrade/1,				% trajanjePutovanjaDoDrugeZgrade(TrajanjePuta:trajanje/2)
 	upisano/1,										% upisano(NazivPredmeta:atom)
-	dan/3											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
+	dan/3,											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
+	prosliRaspored/4
 .
 
 /**
@@ -304,33 +305,45 @@ serijalizirajUJson(SerijaliziraniObjekt) :-
 /*	% prikaz rasporeda iz prologa u tabličnom obliku
 % Baza predikata nadjiRaspored/1
 nadjiRaspored([]) :- %findall(stavka(Predmet, Vrsta, NazivDana, Hpocetak, Mpocetak, Hkraj, Mkraj),
-	format(atom(Zaglavlje), "~n|~a~t~40||~t~a~t~4+|~t~a~t~12+|~t~a~t~8+|~t~a~t~8+|~t~a~t~12+|~n", ['naziv predmeta', 'tip', 'dan', 'pocetak', 'kraj', 'lokacija']),
-	write(Zaglavlje),
-	generiraniRaspored(Predmet, Vrsta, termin(NazivDana, vrijeme(Hpocetak, Mpocetak), vrijeme(Hkraj, Mkraj)), lokacija(Zgrada, Prostorija)),
-	format(atom(Redak), "|~a~t~40||~t~a~t~4+|~t~a~t~12+|~t~d:~d~t~8+|~t~d:~d~t~8+|~t~a > ~a~t~12+|~n", [Predmet, Vrsta, NazivDana, Hpocetak, Mpocetak, Hkraj, Mkraj, Zgrada, Prostorija]),
-	write(Redak),
-	false
+	once(prosliRaspored(_, _, _, _)) ->
+		retractall(prosliRaspored(_, _, _, _))
+		;
+		format(atom(Zaglavlje), "~n|~a~t~40||~t~a~t~4+|~t~a~t~12+|~t~a~t~8+|~t~a~t~8+|~t~a~t~12+|~n", ['naziv predmeta', 'tip', 'dan', 'pocetak', 'kraj', 'lokacija']),
+		write(Zaglavlje),
+		generiraniRaspored(Predmet, Vrsta, termin(NazivDana, vrijeme(Hpocetak, Mpocetak), vrijeme(Hkraj, Mkraj)), lokacija(Zgrada, Prostorija)),
+		format(atom(Redak), "|~a~t~40||~t~a~t~4+|~t~a~t~12+|~t~d:~d~t~8+|~t~d:~d~t~8+|~t~a > ~a~t~12+|~n", [Predmet, Vrsta, NazivDana, Hpocetak, Mpocetak, Hkraj, Mkraj, Zgrada, Prostorija]),
+		write(Redak),
+		halt()
 .
 */
 
-
 % Baza predikata nadjiRaspored/1
 nadjiRaspored([]) :-
-	findall(Objekt, serijalizirajUJson(Objekt), NizSerijaliziranihObjekata),
-	%atomic_list_concat(NizSerijaliziranihObjekata, ',', SerijaliziraniObjekti),
-	string_list_concat(NizSerijaliziranihObjekata, ",", SerijaliziraniObjekti),	% boljih performansi od gornjeg
-	write("["), write(SerijaliziraniObjekti), write("]"), nl()
+	once(prosliRaspored(_, _, _, _)) ->
+		retractall(prosliRaspored(_, _, _, _))
+		;
+		findall(Objekt, serijalizirajUJson(Objekt), NizSerijaliziranihObjekata),
+		%atomic_list_concat(NizSerijaliziranihObjekata, ',', SerijaliziraniObjekti),
+		string_list_concat(NizSerijaliziranihObjekata, ",", SerijaliziraniObjekti),	% boljih performansi od gornjeg
+		write("["), write(SerijaliziraniObjekti), write("]"), nl(),
+		halt()
 .
 
 % Korak rekurzije predikata nadjiRaspored/1
 nadjiRaspored([stavka(Predmet, Vrsta)|Preostali]) :-
 	(
-	not(obveznost(Predmet, Vrsta)) ->
+	not(obveznost(Predmet, Vrsta)), not(prosliRaspored(Predmet, Vrsta, _, _)) ->
 		ignore(nadjiRaspored(Preostali))
 		;
 		true
 	),
 	raspored(Predmet, Vrsta, Termin, Lokacija),
+	(
+	once(prosliRaspored(_, _, _, _)) ->
+		prosliRaspored(Predmet, Vrsta, Termin, Lokacija)
+		;
+		true
+	),
 	odrzavanje(Predmet, Vrsta, Wpocetak, Wkraj),
 	(
 	not(pristajeURaspored(Termin, Wpocetak, Wkraj, Lokacija)),

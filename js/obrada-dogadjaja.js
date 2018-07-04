@@ -78,6 +78,10 @@ $("#odabir-predmeta").submit(function() {
 $("#prvi").click(function() {
     $("#trenutna-kombinacija").html(1);
     ucitajRaspored(1);
+    onemoguciTipku($(this));
+    onemoguciTipku($("#prethodni"));
+    omoguciTipku($("#sljedeci"));
+    omoguciTipku($("#posljedni"));
 });
 
 $("#prethodni").click(function() {
@@ -87,21 +91,114 @@ $("#prethodni").click(function() {
         elementSBrojem.html(brojKombinacije);
         ucitajRaspored(brojKombinacije);
     }
+    if (brojKombinacije === 1) {
+        onemoguciTipku($("#prvi"));
+        onemoguciTipku($(this));
+    }
+    omoguciTipku($("#sljedeci"));
+    omoguciTipku($("#posljedni"));
 });
 
 $("#sljedeci").click(function() {
-    var elementSBrojem = $("#trenutna-kombinacija");
-    var brojKombinacije = parseInt(elementSBrojem.html())+1;
+    var tipkaSljedeci = $(this);
+    var elementSTrenutnimBrojem = $("#trenutna-kombinacija");
+    var elementSUkupnimBrojem = $("#ukupno-kombinacija");
+    var brojKombinacije = parseInt(elementSTrenutnimBrojem.html())+1;
+    var brojKombinacijaRasporeda = parseInt(elementSUkupnimBrojem.html());
     if (brojKombinacije <= brojKombinacijaRasporeda) {
-        elementSBrojem.html(brojKombinacije);
+        elementSTrenutnimBrojem.html(brojKombinacije);
         ucitajRaspored(brojKombinacije);
+        omoguciTipku($("#prvi"));
+        omoguciTipku($("#prethodni"));
+        if (brojKombinacije === brojKombinacijaRasporeda) {
+            onemoguciTipku($("#posljedni"));
+            if (!josKombinacija) {
+                onemoguciTipku($("#sljedeci"));
+            }
+        }
+    }
+    else if (josKombinacija) {
+        var stavkeRasporeda = [];
+        var idZadnjaStavkaRasporeda = null;
+        kodoviRasporeda[ kodoviRasporeda.length-1 ].forEach(function(stavkaRasporeda) {
+            if (stavkaRasporeda.itemid !== idZadnjaStavkaRasporeda) {
+                predmet = stavkaRasporeda.subjectid;
+                lokacija = stavkaRasporeda.title.split("\n")[1];
+                vrstaNastave = vrsteNastavePoBojama[stavkaRasporeda.color];
+                vrijemePocetka = new Date(stavkaRasporeda.start);
+                vrijemeZavrsetka = new Date(stavkaRasporeda.end);
+                vrijemePocetkaSati = vrijemePocetka.getHours();
+                vrijemePocetkaMinute = vrijemePocetka.getMinutes();
+                vrijemeZavrsetkaSati = vrijemeZavrsetka.getHours();
+                vrijemeZavrsetkaMinute = vrijemeZavrsetka.getMinutes();
+                dan = naziviDana[(vrijemePocetka.getDay() || 7) - 1];
+                [zgrada, dvorana] = lokacija.split(' > ');
+                stavkeRasporeda.push(`'${predmet}', '${vrstaNastave}', termin('${dan}', vrijeme(${vrijemePocetkaSati}, ${vrijemePocetkaMinute}),vrijeme(${vrijemeZavrsetkaSati}, ${vrijemeZavrsetkaMinute})), lokacija('${zgrada}', '${dvorana}')`);
+                idZadnjaStavkaRasporeda = stavkaRasporeda.itemid;
+            }
+        });
+        var dataToSend = {
+            prosli_raspored: stavkeRasporeda,
+            upisano: $("#upisani > option").toArray().map(function(elem) {return elem.value}),
+            ogranicenja: $("#ogranicenja > option").toArray().map(function(elem) {return elem.value})
+        };
+        $("#possible-incompleteness-note").html(tekst["workingOnIt"]);
+        $.ajax({
+            url : location.href,
+            type: "POST",
+            data : dataToSend,
+            dataType: "json",
+            success: function(data) {
+                if (data) {
+                    kodoviRasporeda.push(data);
+                    elementSTrenutnimBrojem.html(brojKombinacije);
+                    elementSUkupnimBrojem.html(brojKombinacije);
+                    ucitajRaspored(brojKombinacije);
+                    omoguciTipku($("#prvi"));
+                    omoguciTipku($("#prethodni"));
+                    $("#possible-incompleteness-note").html(tekst["soFar"]);
+                }
+                else {
+                    josKombinacija = false;
+                    onemoguciTipku(tipkaSljedeci);
+                    $("#possible-incompleteness-note").html(tekst["endReached"]);
+                    setInterval(function() {
+                        $("#possible-incompleteness-note").hide();
+                    }, 5000);
+                }
+                onemoguciTipku($("#posljedni"));
+            },
+            error: function() {
+                $("#possible-incompleteness-note").html("");
+                alert(tekst["ajaxRequestFailedError"]);
+            }
+        });
     }
 });
 
 $("#posljedni").click(function() {
+    var brojKombinacijaRasporeda = parseInt($("#ukupno-kombinacija").html());
     $("#trenutna-kombinacija").html(brojKombinacijaRasporeda);
     ucitajRaspored(brojKombinacijaRasporeda);
+    onemoguciTipku($(this));
+    if (!josKombinacija) {
+        onemoguciTipku($("#sljedeci"));
+    }
+    if (brojKombinacijaRasporeda > 1) {
+        omoguciTipku($("#prvi"));
+        omoguciTipku($("#prethodni"));
+    }
 });
+
+function onemoguciTipku(tipka) {
+    tipka.addClass("ui-state-disabled");
+    tipka.attr("disabled", true);
+}
+
+function omoguciTipku(tipka) {
+    tipka.removeClass("ui-state-disabled");
+    tipka.attr("disabled", false);
+}
 
 function ucitajRaspored(pozicija) {
     $("#calendar").fullCalendar("removeEvents");
