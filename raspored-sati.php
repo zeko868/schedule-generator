@@ -137,11 +137,11 @@
                     fclose($pipes[0]);
                     $rasporedi = [];
                     $brojKombinacijaRasporeda = 0;
-                    while ($rezultat = fread($pipes[1], 8192)) {
+                    while ($rezultat = stream_get_contents($pipes[1])) {
                         if ($jestWindowsLjuska) {
                             $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
                         }
-                        foreach (explode("\r\n", $rezultat) as $serijaliziraniRaspored) {
+                        foreach (explode("\n", $rezultat) as $serijaliziraniRaspored) {
                             if (empty($serijaliziraniRaspored)) {
                                 continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
                             }
