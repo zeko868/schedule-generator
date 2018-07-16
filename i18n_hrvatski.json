@@ -14,8 +14,8 @@
     "constraints":"Ograničenja",
     "enrolledCourses":"Upisani predmeti:",
     "outOf":"od",
-    "noResultsError":"Ne postoji zadovoljavajući raspored",
     "noEnrolledCoursesError":"Odaberite predmete koje pohađate",
+    "soFar":"do sad",
     "other":{
         "rule":"Pravilo",
         "maxSatiPredmeta":"najveći broj sati predmeta tjedno",
@@ -58,7 +58,9 @@
         "addRule":"Dodaj novo pravilo",
         "close":"Natrag",
         "noCoursesSelectedError":"Odabrano pravilo se ne može definirati ako nije upisan nijedan predmet!",
-        "gapDefinitionRequiredError":"Postoji pravilo koje definira maksimalni broj rupa pri čemu nije za navedeno definirano pripadajuće trajanje rupe"
+        "gapDefinitionRequiredError":"Postoji pravilo koje definira maksimalni broj rupa pri čemu nije za navedeno definirano pripadajuće trajanje rupe",
+        "noResultsError":"Ne postoji zadovoljavajući raspored",
+        "endReached":"to je sve!"
     },
     "typeOfClasses":{
         "p":"predavanja",

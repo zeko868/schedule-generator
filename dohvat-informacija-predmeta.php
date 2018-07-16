@@ -3,7 +3,16 @@
 date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
 $studij = 2831;     // 2831 je šifra DS INF smjera
 */
+$boje = [
+    'p' => '#CE003D',
+    's' => '#006A8D',
+    'av' => '#00A4A7',
+    'lv' => '#641A45',
+    'v' => '#5F6062'
+];
 $vrsteNastavePoBojama = array_flip($boje);
+$trajanjeTjedna = 7*24*60*60;
+$trajanjeDana = 24*60*60;
 $zimskiSemestarPocetak = strtotime('22.09.' . date('Y'));
 $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
 if (time() < $zimskiSemestarPocetak) {

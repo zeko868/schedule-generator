@@ -36,38 +36,12 @@
             var naziviDana = <?php echo json_encode($naziviDana); ?>;
             var naziviVrsta = <?php echo json_encode($tekst->typeOfClasses); ?>;
             var tekst = <?php echo json_encode($tekst->other); ?>;
-            var kodoviRasporeda = [
             <?php
-                $trajanjeTjedna = 7*24*60*60;
-                $trajanjeDana = 24*60*60;
-                $boje = [
-                    'p' => '#CE003D',
-                    's' => '#006A8D',
-                    'av' => '#00A4A7',
-                    'lv' => '#641A45',
-                    'v' => '#5F6062'
-                ];
                 ini_set('memory_limit', -1);
                 set_time_limit(0);
                 $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
-                require 'dohvat-informacija-predmeta.php';
+                require_once 'dohvat-informacija-predmeta.php';
                 if (isset($_POST['upisano'])) {
-                    $descriptorspec = array(
-                        array('pipe', 'r'),
-                        array('pipe', 'w'),
-                        array('pipe', 'w')
-                    );
-                    $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
-                    // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
-                    if ($jestWindowsLjuska) {
-                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
-                    }
-                    else {
-                        $env = array(
-                            'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
-                        );
-                        $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, NULL, $env);
-                    }
                     $cmdUnosPredmetaTeOgranicenja = '';
                     foreach ($_POST['upisano'] as $sifraPredmeta) {
                         $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$sifraPredmeta')),";
@@ -113,7 +87,6 @@
                             if (!empty($prioritetniRedSPravilimaPohadjanjaNastave[$i])) {
                                 $cmdZadnjaOgranicenja .= implode(',', $prioritetniRedSPravilimaPohadjanjaNastave[$i]) . ',';
                             }
-                        
                         }
                         $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
                     }
@@ -133,28 +106,29 @@
                     if ($jestWindowsLjuska) {
                         $cmd = iconv('utf-8', 'windows-1250', $cmd);
                     }
-                    fwrite($pipes[0], $cmd);
-                    fclose($pipes[0]);
-                    $rasporedi = [];
-                    $brojKombinacijaRasporeda = 0;
-                    while ($rezultat = fread($pipes[1], 8192)) {
-                        if ($jestWindowsLjuska) {
-                            $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
-                        }
-                        foreach (explode("\r\n", $rezultat) as $serijaliziraniRaspored) {
-                            if (empty($serijaliziraniRaspored)) {
-                                continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
-                            }
-                            else if (preg_match('/^false\./', $serijaliziraniRaspored)) {
-                                break 2;
-                            }
-                            $rasporedi[] = json_decode($serijaliziraniRaspored, true);
-                            $brojKombinacijaRasporeda++;
-                        }
+                    $descriptorspec = array(
+                        1 => array("pipe", "w")
+                    );
+                    if ($jestWindowsLjuska) {
+                        $env = null;
                     }
-                    fclose($pipes[1]);
-                    fclose($pipes[2]);
-                    proc_close($process);
+                    else {
+                        $env = array(
+                            'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
+                        );
+                    }
+                    $lokacijaSkripteDaemona = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.php';
+                    $params = [
+                        $jezik,
+                        $_SERVER['SERVER_ADDR'],
+                        $studij,
+                        $cmd
+                    ];
+                    $process = proc_open("nohup php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)) . ' &', $descriptorspec, $pipes, null, $env);
+                    if (is_resource($process)) {
+                        $daemonPort = stream_get_contents($pipes[1]);
+                    }
+                    echo 'var kodoviRasporeda = [];';
                 }
                 else {
                     $terminiPoVrstamaPoPredmetima = [];
@@ -178,47 +152,19 @@
                     }
                     $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
                     $rasporedi = [$rasporedi];
+                    require 'dohvati-rasporede-za-ispis.php';
+                    echo 'var kodoviRasporeda = ' . dohvati_rasporede_za_ispis($rasporedi) . ';';
                 }
-                foreach ($rasporedi as $raspored) {
-                    $kodRasporeda = '';
-                    foreach ($raspored as $stavka) {
-                        $sifraPredmeta = $stavka['predmet'];
-                        $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                        $pocetniTjedan = $stavka['razdoblje']['start'];
-                        $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
-                        $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
-                        $pomakOdPocetkaTjedna = $stavka['termin']['dan'] - 1;
-                        $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
-                        $vrijemePocetka = $stavka['termin']['start'];
-                        $vrijemeZavrsetka = $stavka['termin']['kraj'];
-                        $boja = $boje[$stavka['vrsta']];
-                        $obradjeniZimskiPraznici = false;
-                        for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
-                            if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
-                                $odrzavanje += 2*$trajanjeTjedna;
-                                $obradjeniZimskiPraznici = true;
-                            }
-                            $datumOdrzavanja = date('Y-m-d', $odrzavanje);
-                            $lokacija = $stavka['lokacija'];
-                            $kodRasporeda .= "{title: '$naziviPredmeta[$jezik]\\n$lokacija[zgrada] > $lokacija[prostorija]', start: '{$datumOdrzavanja}T{$vrijemePocetka}:00', end: '{$datumOdrzavanja}T{$vrijemeZavrsetka}:00', color: '$boja'},";
-                            $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
-                            //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
-                        }
-                    }
-                    echo '[';
-                    echo $kodRasporeda;
-                    echo '],';
+                if (!empty($daemonPort)) {
+                    echo 'var daemonPort =' . $daemonPort . ';';
                 }
-            ?>
-            ];
-            <?php
-            if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
-                $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
-            }
-            echo "var serijaliziraniTerminiPoVrstamaPoPredmetima = $serijaliziraniTerminiPoVrstamaPoPredmetima;";
-            if (isset($brojKombinacijaRasporeda)) {
-                echo "var brojKombinacijaRasporeda = $brojKombinacijaRasporeda;";
-            }
+                else {
+                    echo 'var daemonPort = false;';
+                }
+                if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
+                    $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
+                }
+                echo "var serijaliziraniTerminiPoVrstamaPoPredmetima = $serijaliziraniTerminiPoVrstamaPoPredmetima;";
             ?>
         </script>
         <form action="<?php echo "$_SERVER[PHP_SELF]?study_id=$studij";?>" method="POST" id="odabir-predmeta">
@@ -252,27 +198,24 @@
                 <button type="button" id="tipka-ogranicenja" class="ui-button ui-corner-all ui-widget"><?php echo $tekst->constraints; ?></button>
                 <br/>
                 <?php
-                if (isset($brojKombinacijaRasporeda)) {
-                    if ($brojKombinacijaRasporeda>0) {
+                    if (isset($_POST['upisano'])) {
                 ?>
                 <nav>
                     <button type="button" id="prvi" class="ui-button ui-corner-all ui-widget">&lt;&lt;</button>
                     <button type="button" id="prethodni" class="ui-button ui-corner-all ui-widget">&lt;</button>
-                    <span><span id="trenutna-kombinacija">1</span> <?php echo $tekst->outOf; ?> <?php echo $brojKombinacijaRasporeda;?></span>
+                    <span id="trenutna-kombinacija">0</span> <?php echo $tekst->outOf; ?> <span id="ukupno-kombinacija">0</span></span>
                     <button type="button" id="sljedeci" class="ui-button ui-corner-all ui-widget">&gt;</button>
                     <button type="button" id="posljedni" class="ui-button ui-corner-all ui-widget">&gt;&gt;</button>
+                    <br/>
+                    <span id="possible-incompleteness-note"><?php echo $tekst->soFar; ?></span>
                 </nav>
                 <?php
                     }
                     else {
-                        echo "<p class=\"error\">$tekst->noResultsError</p>";
+                        if (isset($_POST['dostupno'])) {
+                            echo "<span class=\"error\">$tekst->noEnrolledCoursesError</span>";
+                        }
                     }
-                }
-                else {
-                    if (isset($_POST['dostupno']) && empty($_POST['upisano'])) {
-                        echo "<p class=\"error\">$tekst->noEnrolledCoursesError</p>";
-                    }
-                }
                 ?>
             </div>
             <div class="right">

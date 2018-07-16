@@ -92,15 +92,15 @@ $("#prethodni").click(function() {
 $("#sljedeci").click(function() {
     var elementSBrojem = $("#trenutna-kombinacija");
     var brojKombinacije = parseInt(elementSBrojem.html())+1;
-    if (brojKombinacije <= brojKombinacijaRasporeda) {
+    if (brojKombinacije <= kodoviRasporeda.length) {
         elementSBrojem.html(brojKombinacije);
         ucitajRaspored(brojKombinacije);
     }
 });
 
 $("#posljedni").click(function() {
-    $("#trenutna-kombinacija").html(brojKombinacijaRasporeda);
-    ucitajRaspored(brojKombinacijaRasporeda);
+    $("#trenutna-kombinacija").html(kodoviRasporeda.length);
+    ucitajRaspored(kodoviRasporeda.length);
 });
 
 function ucitajRaspored(pozicija) {
@@ -272,6 +272,36 @@ function dodajRedakOgranicenja(glavniSelectbox) {
 
 $(document).ready(function() {
     var dialog, form;
+
+    if (daemonPort) {
+        var conn = new WebSocket('ws://' + window.location.hostname + ':' + daemonPort);
+        conn.onopen = function(e) {
+            conn.send("");
+        };
+
+        conn.onmessage = function(e) {
+            var prviPodaci = kodoviRasporeda.length === 0;
+            kodoviRasporeda.push(...JSON.parse(e.data));
+            $("#ukupno-kombinacija").html(kodoviRasporeda.length);
+            if (prviPodaci) {
+                $("#trenutna-kombinacija").html(1);
+                ucitajRaspored(1);
+            }
+        };
+
+        conn.onclose = function(e) {
+            conn.close();
+            if (kodoviRasporeda.length) {
+                $("#possible-incompleteness-note").html(tekst["endReached"]);
+                setInterval(function() {
+                    $("#possible-incompleteness-note").hide();
+                }, 5000);
+            }
+            else {
+                $(".middle > nav").html(`<p class="error">${tekst["noResultsError"]}</p>`);
+            }
+        };
+    }
 
     $("#calendar").fullCalendar({
         theme: false,
