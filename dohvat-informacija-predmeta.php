@@ -120,11 +120,8 @@ foreach ($sifrePredmeta as $sifra => &$naziviPredmeta) {
                         $nazivElementaPracenja = $tr->childNodes[0]->textContent;
                     }
                     if (pronadjiDetaljeOObveznostiNastave($nazivElementaPracenja) === true) {
-                        break;
+                        break 2;
                     }
-                }
-                if ($obveznostPredmeta === 'all') {
-                    break;
                 }
             }
         }
@@ -312,7 +309,7 @@ function dodaj_u_raspored() {
 
 function pronadjiDetaljeOObveznostiNastave($ispitivaniTekst) {
     global $obveznostPredmeta;
-    if (preg_match('/(?:(?:prisustv?o|prisut(?:st)?vo)(?:vanje)?|prisutnost|dola(?:znost|sci)|nazočnost|izostan(?:aka?|ka|ci))(?:(?:.*?(?:(predavanj(?:ima|u))|(seminar(?:ima|e|a|u)|(?:sem\.|seminarsk(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(auditorij(?:ima|e|a)|(?:aud\.|auditorn(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(labos(?:e|ima|a)|(?:laboratorijsk(?:im|e|ih|oj)|lab\.) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(vježb(?:ama|e|i|a))))+|(.*nastav(?:i|e)))/i', $ispitivaniTekst, $rezultat)) {
+    if (preg_match('/(?:(?:prisustv?o|prisut(?:st)?vo)(?:vanje)?|prisutnost|dola(?:znost|sci)|nazočnost|izostan(?:aka?|ka|ci))(?:(?:.*?(?:(predavanj(?:(?:im)?a|u))|(seminar(?:ima|e|a|u)|(?:sem\.|seminarsk(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(auditorij(?:ima|e|a)|(?:aud\.|auditorn(?:im|e|ih|oj)) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(labos(?:e|ima|a)|(?:laboratorijsk(?:im|e|ih|oj)|lab\.) (?:vježb(?:ama|e|i|a)|nastav(?:i|e)))|(vježb(?:ama|e|i|a))))+|(.*nastav(?:i|e)))/i', $ispitivaniTekst, $rezultat)) {
         /*
         foreach ([4, 8] as $stupacGranice) {
             $tr->childNodes[$stupacGranice]->textContent;
@@ -423,6 +420,6 @@ if (!file_exists($nazivDatotekePredmeta)) {
     file_put_contents($nazivDatotekePredmeta, json_encode($sifrePredmeta = array_map(function($detaljiPredmeta){unset($detaljiPredmeta['id']); return $detaljiPredmeta;}, $sifrePredmeta), JSON_UNESCAPED_UNICODE));
 }
 else {
-    $sifrePredmeta = file_get_contents($nazivDatotekePredmeta);
+    $sifrePredmeta = json_decode(file_get_contents($nazivDatotekePredmeta), true);
 }
 ?>

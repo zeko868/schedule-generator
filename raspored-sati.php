@@ -82,8 +82,8 @@
                             if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
                                 $cmdTrazi = $ogranicenje;
                             }
-                            else if (preg_match('/^pohadjanjeNastave\(\d+,\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
-                                $biloKojiPredmet = $matches[1] === '';
+                            else if (preg_match('/^pohadjanjeNastave\((\d+|\'\'),\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
+                                $biloKojiPredmet = $matches[1] === "''";
                                 $biloKojaVrsta = $matches[2] === 'any';
                                 if ($biloKojiPredmet && $biloKojaVrsta) {
                                     $prioritet = 0;
@@ -129,7 +129,7 @@
                     }
                     $putanja = dirname($_SERVER['PHP_SELF']);
                     $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
+                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
                     if ($jestWindowsLjuska) {
                         $cmd = iconv('utf-8', 'windows-1250', $cmd);
                     }
@@ -137,19 +137,31 @@
                     fclose($pipes[0]);
                     $rasporedi = [];
                     $brojKombinacijaRasporeda = 0;
+                    $prethodniNedovrseniRaspored = '';
                     while ($rezultat = stream_get_contents($pipes[1])) {
                         if ($jestWindowsLjuska) {
                             $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
                         }
-                        foreach (explode("\n", $rezultat) as $serijaliziraniRaspored) {
-                            if (empty($serijaliziraniRaspored)) {
-                                continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
+                        $prevRetVal = 0;
+                        $offset = 0;
+                        while (true) {
+                            $retVal = strpos($rezultat, "\n", $offset);
+                            if ($retVal === false) {
+                                $prethodniNedovrseniRaspored .= substr($rezultat, $prevRetVal);
+                                break;
                             }
-                            else if (preg_match('/^false\./', $serijaliziraniRaspored)) {
-                                break 2;
+                            else {
+                                $serijaliziraniRaspored = substr($rezultat, $prevRetVal, $retVal - $prevRetVal);
+                                if (!empty($prethodniNedovrseniRaspored)) {
+                                    $serijaliziraniRaspored = $prethodniNedovrseniRaspored . $serijaliziraniRaspored;
+                                    $prethodniNedovrseniRaspored = '';
+                                }
+                                $raspored = json_decode($serijaliziraniRaspored, true);
+                                $rasporedi[] = $raspored;
+                                $brojKombinacijaRasporeda++;
+                                $prevRetVal = $retVal;
+                                $offset = $prevRetVal + 1;
                             }
-                            $rasporedi[] = json_decode($serijaliziraniRaspored, true);
-                            $brojKombinacijaRasporeda++;
                         }
                     }
                     fclose($pipes[1]);
