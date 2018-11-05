@@ -271,13 +271,10 @@ function dodajRedakOgranicenja(glavniSelectbox) {
 }
 
 $(document).ready(function() {
-    var dialog, form;
+    var dialog;
 
     if (daemonPort) {
         var conn = new WebSocket('ws://' + window.location.hostname + ':' + daemonPort);
-        conn.onopen = function(e) {
-            conn.send("");
-        };
 
         conn.onmessage = function(e) {
             var prviPodaci = kodoviRasporeda.length === 0;

@@ -56,8 +56,8 @@
                             if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
                                 $cmdTrazi = $ogranicenje;
                             }
-                            else if (preg_match('/^pohadjanjeNastave\(\d+,\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
-                                $biloKojiPredmet = $matches[1] === '';
+                            else if (preg_match('/^pohadjanjeNastave\((\d+|\'\'),\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
+                                $biloKojiPredmet = $matches[1] === "''";
                                 $biloKojaVrsta = $matches[2] === 'any';
                                 if ($biloKojiPredmet && $biloKojaVrsta) {
                                     $prioritet = 0;
@@ -102,12 +102,12 @@
                     }
                     $putanja = dirname($_SERVER['PHP_SELF']);
                     $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
+                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
                     if ($jestWindowsLjuska) {
                         $cmd = iconv('utf-8', 'windows-1250', $cmd);
                     }
                     $descriptorspec = array(
-                        1 => array("pipe", "w")
+                        1 => array('pipe', 'w')
                     );
                     if ($jestWindowsLjuska) {
                         $env = null;
@@ -124,9 +124,15 @@
                         $studij,
                         $cmd
                     ];
-                    $process = proc_open("nohup php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)) . ' &', $descriptorspec, $pipes, null, $env);
+                    if ($jestWindowsLjuska) {
+                        $process = proc_open("start /B php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)), $descriptorspec, $pipes, null, $env);
+                    }
+                    else {
+                        $process = proc_open("nohup php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)) . ' &', $descriptorspec, $pipes, null, $env);
+                    }
                     if (is_resource($process)) {
                         $daemonPort = stream_get_contents($pipes[1]);
+                        //$daemonPort = fread($pipes[1], 5);
                     }
                     echo 'var kodoviRasporeda = [];';
                 }
