@@ -13,7 +13,6 @@
         $vrsteNastavePoBojama = array_flip($boje);
         ini_set('memory_limit', -1);
         set_time_limit(0);
-        $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
         require 'dohvat-informacija-predmeta.php';
         if (isset($_POST['upisano'])) {
             $descriptorspec = array(
@@ -24,14 +23,14 @@
             $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
             // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
             if ($jestWindowsLjuska) {
-                $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
+                $env = null;
             }
             else {
                 $env = array(
                     'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
                 );
-                $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, NULL, $env);
             }
+            $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, null, $env);
             $cmdUnosPredmetaTeOgranicenja = '';
             foreach ($_POST['upisano'] as $sifraPredmeta) {
                 $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$sifraPredmeta')),";
@@ -51,8 +50,8 @@
                     if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
                         $cmdTrazi = $ogranicenje;
                     }
-                    else if (preg_match('/^pohadjanjeNastave\(\d+,\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
-                        $biloKojiPredmet = $matches[1] === '';
+                    else if (preg_match('/^pohadjanjeNastave\((\d+|\'\'),\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
+                        $biloKojiPredmet = $matches[1] === "''";
                         $biloKojaVrsta = $matches[2] === 'any';
                         if ($biloKojiPredmet && $biloKojaVrsta) {
                             $prioritet = 0;
@@ -98,27 +97,36 @@
             }
             $putanja = dirname($_SERVER['PHP_SELF']);
             $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, writeln(\"false.\"), halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
+            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, halt().";
             if ($jestWindowsLjuska) {
                 $cmd = iconv('utf-8', 'windows-1250', $cmd);
             }
             fwrite($pipes[0], $cmd);
             fclose($pipes[0]);
-            $rasporedi = null;
+            $rasporedi = [];
             $brojKombinacijaRasporeda = 0;
+            $prethodniNedovrseniRaspored = '';
             while ($rezultat = stream_get_contents($pipes[1])) {
-                if ($jestWindowsLjuska) {
-                    $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
-                }
-                foreach (explode("\n", $rezultat) as $serijaliziraniRaspored) {
-                    if (empty($serijaliziraniRaspored)) {
-                        continue;   // prazni redak je nekada samo kraj trenutnog chunka, a kada nije pronađen nijedan rezultat, tada se nalazi ispred finalne riječi false.
+                $prevRetVal = 0;
+                $offset = 0;
+                while (true) {
+                    $retVal = strpos($rezultat, "\n", $offset);
+                    if ($retVal === false) {
+                        $prethodniNedovrseniRaspored .= substr($rezultat, $prevRetVal);
+                        break;
                     }
-                    else if (preg_match('/^false\./', $serijaliziraniRaspored)) {
-                        break 2;
+                    else {
+                        $serijaliziraniRaspored = substr($rezultat, $prevRetVal, $retVal - $prevRetVal);
+                        if (!empty($prethodniNedovrseniRaspored)) {
+                            $serijaliziraniRaspored = $prethodniNedovrseniRaspored . $serijaliziraniRaspored;
+                            $prethodniNedovrseniRaspored = '';
+                        }
+                        $rasporedi[] = json_decode($serijaliziraniRaspored, true);
+                        $brojKombinacijaRasporeda++;
+                        $prevRetVal = $retVal;
+                     
+                        $offset = $prevRetVal + 1;
                     }
-                    $rasporedi = json_decode($serijaliziraniRaspored, true);
-                    $brojKombinacijaRasporeda = 1;
                 }
             }
             fclose($pipes[1]);
@@ -127,7 +135,7 @@
         }
         else {
             $terminiPoVrstamaPoPredmetima = [];
-            foreach ($rasporedi as $stavka) {
+            foreach ($termini as $stavka) {
                 $predmet = $stavka['predmet'];
                 $vrsta = $stavka['vrsta'];
                 $termin = $stavka['termin'];
@@ -146,37 +154,40 @@
                 $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
             }
             $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
+            $rasporedi = [&$termini];
         }
-        if ($rasporedi === null) {
+        if (empty($rasporedi)) {
             echo 'null';
         }
         else {
             $stavkaId = 0;
             $kodRasporeda = [];
-            foreach ($rasporedi as $stavka) {
-                $sifraPredmeta = $stavka['predmet'];
-                $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                $pocetniTjedan = $stavka['razdoblje']['start'];
-                $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
-                $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
-                $pomakOdPocetkaTjedna = $stavka['termin']['dan'] - 1;
-                $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
-                $vrijemePocetka = $stavka['termin']['start'];
-                $vrijemeZavrsetka = $stavka['termin']['kraj'];
-                $boja = $boje[$stavka['vrsta']];
-                $obradjeniZimskiPraznici = false;
-                for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
-                    if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
-                        $odrzavanje += 2*$trajanjeTjedna;
-                        $obradjeniZimskiPraznici = true;
+            foreach ($rasporedi as $raspored) {
+                foreach ($raspored as $stavka) {
+                    $sifraPredmeta = $stavka['predmet'];
+                    $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
+                    $pocetniTjedan = $stavka['razdoblje']['start'];
+                    $trajanjePredmeta = $stavka['razdoblje']['kraj'] - $pocetniTjedan + 1;
+                    $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
+                    $pomakOdPocetkaTjedna = $stavka['termin']['dan'] - 1;
+                    $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
+                    $vrijemePocetka = $stavka['termin']['start'];
+                    $vrijemeZavrsetka = $stavka['termin']['kraj'];
+                    $boja = $boje[$stavka['vrsta']];
+                    $obradjeniZimskiPraznici = false;
+                    for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
+                        if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
+                            $odrzavanje += 2*$trajanjeTjedna;
+                            $obradjeniZimskiPraznici = true;
+                        }
+                        $datumOdrzavanja = date('Y-m-d', $odrzavanje);
+                        $lokacija = $stavka['lokacija'];
+                        $kodRasporeda[] =  "{\"itemid\":$stavkaId, \"subjectid\":$sifraPredmeta, \"title\": \"$naziviPredmeta[$jezik]\\n$lokacija[zgrada] > $lokacija[prostorija]\", \"start\": \"{$datumOdrzavanja}T{$vrijemePocetka}:00\", \"end\": \"{$datumOdrzavanja}T{$vrijemeZavrsetka}:00\", \"color\": \"$boja\"}";
+                        $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
+                        //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
                     }
-                    $datumOdrzavanja = date('Y-m-d', $odrzavanje);
-                    $lokacija = $stavka['lokacija'];
-                    $kodRasporeda[] =  "{\"itemid\":$stavkaId, \"subjectid\":$sifraPredmeta, \"title\": \"$naziviPredmeta[$jezik]\\n$lokacija[zgrada] > $lokacija[prostorija]\", \"start\": \"{$datumOdrzavanja}T{$vrijemePocetka}:00\", \"end\": \"{$datumOdrzavanja}T{$vrijemeZavrsetka}:00\", \"color\": \"$boja\"}";
-                    $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
-                    //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
+                    $stavkaId++;
                 }
-                $stavkaId++;
             }
             echo '[';
             echo implode(',', $kodRasporeda);
