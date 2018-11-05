@@ -1,6 +1,5 @@
 {
     "require":{
-        "cboden/ratchet":"@dev",
-        "react/child-process":"^0.5.2"
+        "cboden/ratchet":"@dev"
     }
 }

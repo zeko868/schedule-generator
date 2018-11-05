@@ -125,10 +125,10 @@
                         $cmd
                     ];
                     if ($jestWindowsLjuska) {
-                        $process = proc_open("start /B php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)), $descriptorspec, $pipes, null, $env);
+                        $process = proc_open("start /B php -d extension=pthreads -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)), $descriptorspec, $pipes, null, $env);
                     }
                     else {
-                        $process = proc_open("nohup php -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)) . ' &', $descriptorspec, $pipes, null, $env);
+                        $process = proc_open("nohup php -d extension=pthreads -f $lokacijaSkripteDaemona -- " . implode(' ', array_map('escapeshellarg', $params)) . ' &', $descriptorspec, $pipes, null, $env);
                     }
                     if (is_resource($process)) {
                         $daemonPort = stream_get_contents($pipes[1]);

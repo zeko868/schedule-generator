@@ -1,12 +1,10 @@
 <?php
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-use React\ChildProcess\Process;
 
 require __DIR__ . '/vendor/autoload.php';
 
 const PERIOD_SLANJA = 1;
-const TRAJANJE_SPAVANJA = 0.2;
 
     class PosiljateljRasporeda implements MessageComponentInterface {
 
@@ -16,9 +14,6 @@ const TRAJANJE_SPAVANJA = 0.2;
         private $client;
         private $prologCommand;
         private $jestWindowsLjuska;
-        private $process;
-        private $prethodniNedovrseniRaspored;
-        private $rasporedi = [];
     
         public function __construct($prologCommand) {
             $this->prologCommand = $prologCommand;
@@ -37,52 +32,8 @@ const TRAJANJE_SPAVANJA = 0.2;
             $this->timer = $this->loop->addPeriodicTimer(PERIOD_SLANJA, function() {
                 $this->posalji_rezultate_klijentu();
             });
-            $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
-            if ($this->jestWindowsLjuska) {
-                $env = null;
-            }
-            else {
-                $env = array(
-                    'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
-                );
-            }
-            $this->process = new Process("swipl -s $lokacijaPrologSkripte", null, $env);
-            $this->process->start($this->loop);
-            $this->prethodniNedovrseniRaspored = '';
-            $this->process->stdout->on('data', function($rezultat) {
-                if ($this->jestWindowsLjuska) {
-                    $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
-                }
-                $prevRetVal = 0;
-                $offset = 0;
-                while (true) {
-                    $retVal = strpos($rezultat, "\n", $offset);
-                    if ($retVal === false) {
-                        $this->prethodniNedovrseniRaspored .= substr($rezultat, $prevRetVal);
-                        break;
-                    }
-                    else {
-                        $serijaliziraniRaspored = substr($rezultat, $prevRetVal, $retVal - $prevRetVal);
-                        if (!empty($this->prethodniNedovrseniRaspored)) {
-                            $serijaliziraniRaspored = $this->prethodniNedovrseniRaspored . $serijaliziraniRaspored;
-                            $this->prethodniNedovrseniRaspored = '';
-                        }
-                        $this->rasporedi[] = json_decode($serijaliziraniRaspored, true);
-                        $prevRetVal = $retVal;
-                        $offset = $prevRetVal + 1;
-                    }
-                }
-                usleep(1000000*TRAJANJE_SPAVANJA);
-            });
-
-            $this->process->stdout->on('end', function() {
-                $this->rasporedi[] = false;
-                $this->loop->cancelTimer($this->timer);
-                $this->posalji_rezultate_klijentu();
-            });
-            
-            $this->process->stdin->write($this->prologCommand . "\n");
-            $this->process->stdin->end(null);
+            $this->dohvatiteljRasporeda = new DohvatiteljRasporeda($this->prologCommand, $this->jestWindowsLjuska);
+            $this->dohvatiteljRasporeda->start();
         }
     
         public function onMessage(ConnectionInterface $from, $msg) {
@@ -90,9 +41,9 @@ const TRAJANJE_SPAVANJA = 0.2;
     
         public function onClose(ConnectionInterface $conn) {
             $this->loop->cancelTimer($this->timer);
-            $this->process->stdout->close();
-            $this->process->stderr->close();
-            $this->process->terminate();
+            fclose($this->dohvatiteljRasporeda->stdoutPipe);
+            fclose($this->dohvatiteljRasporeda->stderrPipe);
+            proc_close($this->dohvatiteljRasporeda->process);
             exit();
         }
     
@@ -103,22 +54,87 @@ const TRAJANJE_SPAVANJA = 0.2;
         }
 
         private function posalji_rezultate_klijentu() {
-            $end = false;
-            if (!empty($this->rasporedi)) {
-                $lastElem = end($this->rasporedi);
-                reset($this->rasporedi);
-                $end = $lastElem === false;  // if there are no more results, it should be false
-                if ($end) {
-                    array_pop($this->rasporedi);
+            $rasporedi = $this->dohvatiteljRasporeda->rasporedi->synchronized(function() use (&$end) {
+                $rasporedi = [];
+                while ($raspored = $this->dohvatiteljRasporeda->rasporedi->shift()) {
+                    $rasporedi[] = $raspored;
                 }
-            }
-            if (!empty($this->rasporedi)) {
-                $this->client->send(dohvati_rasporede_za_ispis($this->rasporedi));
+                $end = $raspored === false;  // if there are no more results, it should be false, otherwise null
+                return $rasporedi;
+            });
+            if (!empty($rasporedi)) {
+                $this->client->send(dohvati_rasporede_za_ispis($rasporedi));
             }
             if ($end) {
                 $this->client->close();
             }
-            $this->rasporedi = [];
+        }
+    }
+
+    class DohvatiteljRasporeda extends Thread {
+        public $process;
+        public $stdoutPipe;
+        public $stderrPipe;
+        public $rasporedi;
+        private $jestWindowsLjuska;
+
+        public function __construct($prologCommand, $jestWindowsLjuska) {
+            $this->jestWindowsLjuska = $jestWindowsLjuska;
+            // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
+            $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+            $descriptorspec = array(
+                array('pipe', 'r'),
+                array('pipe', 'w'),
+                array('pipe', 'w')
+            );
+            if ($this->jestWindowsLjuska) {
+                $env = null;
+            }
+            else {
+                $env = array(
+                    'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
+                );
+            }
+            $this->process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes, null, $env);
+            list($stdin, $this->stdoutPipe, $this->stderrPipe) = $pipes;
+            fwrite($stdin, $prologCommand . "\n");
+            fclose($stdin);
+            $this->rasporedi = new Threaded();
+        }
+
+        public function run() {
+            $prethodniNedovrseniRaspored = '';
+            while ($rezultat = fread($this->stdoutPipe, 512)) {
+                if ($this->jestWindowsLjuska) {
+                    $rezultat = iconv('windows-1250', 'utf-8', $rezultat);
+                }
+                $prevRetVal = 0;
+                $offset = 0;
+                while (true) {
+                    $retVal = strpos($rezultat, "\n", $offset);
+                    if ($retVal === false) {
+                        $prethodniNedovrseniRaspored .= substr($rezultat, $prevRetVal);
+                        break;
+                    }
+                    else {
+                        $serijaliziraniRaspored = substr($rezultat, $prevRetVal, $retVal - $prevRetVal);
+                        if (!empty($prethodniNedovrseniRaspored)) {
+                            $serijaliziraniRaspored = $prethodniNedovrseniRaspored . $serijaliziraniRaspored;
+                            $prethodniNedovrseniRaspored = '';
+                        }
+                        $raspored = json_decode($serijaliziraniRaspored, true);
+                        $this->rasporedi->synchronized(function() use (&$raspored) {
+                            $this->rasporedi[] = (array) $raspored;
+                        });
+                        $prevRetVal = $retVal;
+                        $offset = $prevRetVal + 1;
+                    }
+                }
+            }
+
+            $this->rasporedi->synchronized(function() {
+                $this->rasporedi[] = false;
+            });
         }
     }
 
