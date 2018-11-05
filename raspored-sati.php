@@ -156,8 +156,7 @@
                                     $serijaliziraniRaspored = $prethodniNedovrseniRaspored . $serijaliziraniRaspored;
                                     $prethodniNedovrseniRaspored = '';
                                 }
-                                $raspored = json_decode($serijaliziraniRaspored, true);
-                                $rasporedi[] = $raspored;
+                                $rasporedi[] = json_decode($serijaliziraniRaspored, true);
                                 $brojKombinacijaRasporeda++;
                                 $prevRetVal = $retVal;
                                 $offset = $prevRetVal + 1;
@@ -170,7 +169,7 @@
                 }
                 else {
                     $terminiPoVrstamaPoPredmetima = [];
-                    foreach ($rasporedi as $stavka) {
+                    foreach ($termini as $stavka) {
                         $predmet = $stavka['predmet'];
                         $vrsta = $stavka['vrsta'];
                         $termin = $stavka['termin'];
@@ -189,7 +188,7 @@
                         $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
                     }
                     $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
-                    $rasporedi = [$rasporedi];
+                    $rasporedi = [&$termini];
                 }
                 foreach ($rasporedi as $raspored) {
                     $kodRasporeda = '';
