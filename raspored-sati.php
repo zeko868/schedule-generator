@@ -138,7 +138,7 @@
                 }
                 else {
                     $terminiPoVrstamaPoPredmetima = [];
-                    foreach ($rasporedi as $stavka) {
+                    foreach ($termini as $stavka) {
                         $predmet = $stavka['predmet'];
                         $vrsta = $stavka['vrsta'];
                         $termin = $stavka['termin'];
@@ -157,7 +157,7 @@
                         $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
                     }
                     $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
-                    $rasporedi = [$rasporedi];
+                    $rasporedi = [&$termini];
                     require 'dohvati-rasporede-za-ispis.php';
                     echo 'var kodoviRasporeda = ' . dohvati_rasporede_za_ispis($rasporedi) . ';';
                 }

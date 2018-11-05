@@ -38,7 +38,7 @@ if (file_exists($nazivDatotekeRasporeda)) {
     $sadrzaj = file_get_contents($nazivDatotekeRasporeda);
 
     if ($sadrzaj !== false) {
-        $rasporedi = json_decode($sadrzaj, true);
+        $termini = json_decode($sadrzaj, true);
         $sifrePredmeta = json_decode(file_get_contents($nazivDatotekePredmeta), true);
         return;
     }
@@ -102,7 +102,7 @@ while (true) {
 }
 $godine--;
 $hrvatskiNaziviPredmeta = [];   // radi bržeg dohvaćanja identifikatora predmeta iz pripadajućeg naziva
-$rasporedi = [];
+$termini = [];
 $obveznostNastavePoPredmetima = [];
 foreach ($sifrePredmeta as $sifra => &$naziviPredmeta) {
     $ch = curl_init("https://nastava.foi.hr/public/course?study=$studij&course=$sifra&academicYear=$akademskaGodinaPocetak%2F$akademskaGodinaKraj");
@@ -226,7 +226,7 @@ EOS
                         $ignorirajUnos = true;
                         continue;   // proskoči termine ostalih oblika nastave poput ispita, nadoknada i demonstratura
                     }
-                    if (isset($rasporedi[$sifraPredmeta][$vrstaNastave][$prethodniId])) {   // termin nastave koji je predviđen za studente iz više grupa treba imatu jedan zajednički identifikator, a ne da za svaku grupu je poseban - taj problem se rješava u metodi dodaj_u_raspored()
+                    if (isset($termini[$sifraPredmeta][$vrstaNastave][$prethodniId])) {   // termin nastave koji je predviđen za studente iz više grupa treba imatu jedan zajednički identifikator, a ne da za svaku grupu je poseban - taj problem se rješava u metodi dodaj_u_raspored()
                         $ignorirajUnos = true;
                     }
                     else {
@@ -272,7 +272,7 @@ function dodaj_u_raspored() {
     global $vrstaNastave;
     //global $obveznostNastavePoPredmetima;
     global $pocetakRazdoblja;
-    global $rasporedi;
+    global $termini;
     global $akademskaGodinaKraj;
     global $zgrada;
     global $prostorija;
@@ -290,7 +290,7 @@ function dodaj_u_raspored() {
         $zavrsetakRazdoblja = ($pocetakTjedna - $ljetniSemestarPocetak)/(7*24*60*60) + 1;
     }
     if ($pocetakRazdoblja !== $zavrsetakRazdoblja) {    // vjerojatno je riječ o nadoknadi ako se nešto izvodi samo jedanput
-        //$rasporedi[$prethodniId] =
+        //$termini[$prethodniId] =
         $stavkaZaDodavanje =
             [
                 'predmet' => $sifraPredmeta,
@@ -311,8 +311,8 @@ function dodaj_u_raspored() {
                     'prostorija' => $prostorija
                 ]
             ];
-        if (!isset($rasporedi[$sifraPredmeta][$vrstaNastave]) || !in_array($stavkaZaDodavanje, $rasporedi[$sifraPredmeta][$vrstaNastave])) {
-            $rasporedi[$sifraPredmeta][$vrstaNastave][$prethodniId] = $stavkaZaDodavanje;
+        if (!isset($termini[$sifraPredmeta][$vrstaNastave]) || !in_array($stavkaZaDodavanje, $termini[$sifraPredmeta][$vrstaNastave])) {
+            $termini[$sifraPredmeta][$vrstaNastave][$prethodniId] = $stavkaZaDodavanje;
         }
     }
 }
@@ -351,9 +351,9 @@ function pronadjiDetaljeOObveznostiNastave($ispitivaniTekst) {
 
 foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
     if ($obveznostNastave === 'all') {
-        foreach (array_keys($rasporedi[$sifraPredmeta]) as $vrstaNastave) {
-            foreach (array_keys($rasporedi[$sifraPredmeta][$vrstaNastave]) as $scheduleId) {
-                $rasporedi[$sifraPredmeta][$vrstaNastave][$scheduleId]['obveznost'] = true;
+        foreach (array_keys($termini[$sifraPredmeta]) as $vrstaNastave) {
+            foreach (array_keys($termini[$sifraPredmeta][$vrstaNastave]) as $scheduleId) {
+                $termini[$sifraPredmeta][$vrstaNastave][$scheduleId]['obveznost'] = true;
             }
         }
     }
@@ -361,10 +361,10 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
         $notFound = [];
         $found = [];
         foreach ($obveznostNastave as $obveznaVrsta) {
-            if (array_key_exists($obveznaVrsta, $rasporedi[$sifraPredmeta])) {
+            if (array_key_exists($obveznaVrsta, $termini[$sifraPredmeta])) {
                 $found[]= $obveznaVrsta;
-                foreach (array_keys($rasporedi[$sifraPredmeta][$obveznaVrsta]) as $scheduleId) {
-                    $rasporedi[$sifraPredmeta][$obveznaVrsta][$scheduleId]['obveznost'] = true;
+                foreach (array_keys($termini[$sifraPredmeta][$obveznaVrsta]) as $scheduleId) {
+                    $termini[$sifraPredmeta][$obveznaVrsta][$scheduleId]['obveznost'] = true;
                 }
             }
             else {
@@ -372,7 +372,7 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
             }
         }
         if (!empty($notFound)) {
-            $josNeobvezni = array_diff(array_keys($rasporedi[$sifraPredmeta]), $found);
+            $josNeobvezni = array_diff(array_keys($termini[$sifraPredmeta]), $found);
             foreach ($notFound as $nedodijeljenaVrsta) {
                 $substitut = null;
                 switch ($nedodijeljenaVrsta) {
@@ -401,20 +401,20 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
                 }
                 if (isset($substitut)) {
                     unset($josNeobvezni[array_search($substitut, $josNeobvezni)]);
-                    foreach (array_keys($rasporedi[$sifraPredmeta][$substitut]) as $scheduleId) {
-                        $rasporedi[$sifraPredmeta][$substitut][$scheduleId]['obveznost'] = true;
+                    foreach (array_keys($termini[$sifraPredmeta][$substitut]) as $scheduleId) {
+                        $termini[$sifraPredmeta][$substitut][$scheduleId]['obveznost'] = true;
                     }
                 }
             }
         }
     }
 }
-function dohvatiStavkeRasporeda($rasporedi) {
+function dohvatiStavkeRasporeda($termini) {
     $rezultat = [];
-    foreach (array_values($rasporedi) as $rasporediPredmeta) {
-        foreach ($rasporediPredmeta as $vrsteNastave) {
-            foreach ($vrsteNastave as $rasporediNastave) {
-                $rezultat[]= $rasporediNastave;
+    foreach (array_values($termini) as $terminiPredmeta) {
+        foreach ($terminiPredmeta as $vrsteNastave) {
+            foreach ($vrsteNastave as $terminiNastave) {
+                $rezultat[]= $terminiNastave;
             }
         }
     }
@@ -422,9 +422,9 @@ function dohvatiStavkeRasporeda($rasporedi) {
 }
 
 
-//echo json_encode(array_values($rasporedi), JSON_UNESCAPED_UNICODE);
+//echo json_encode(array_values($termini), JSON_UNESCAPED_UNICODE);
 
-file_put_contents($nazivDatotekeRasporeda, json_encode($rasporedi = dohvatiStavkeRasporeda($rasporedi), JSON_UNESCAPED_UNICODE));
+file_put_contents($nazivDatotekeRasporeda, json_encode($termini = dohvatiStavkeRasporeda($termini), JSON_UNESCAPED_UNICODE));
 
 if (!file_exists($nazivDatotekePredmeta)) {
     file_put_contents($nazivDatotekePredmeta, json_encode($sifrePredmeta = array_map(function($detaljiPredmeta){unset($detaljiPredmeta['id']); return $detaljiPredmeta;}, $sifrePredmeta), JSON_UNESCAPED_UNICODE));
