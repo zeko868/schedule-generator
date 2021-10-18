@@ -5,8 +5,7 @@ use React\ChildProcess\Process;
 
 require __DIR__ . '/vendor/autoload.php';
 
-const PERIOD_SLANJA = 1;
-const TRAJANJE_SPAVANJA = 0.2;
+define('PERIOD_SLANJA', getenv('WEBSOCKETS_RECENT_SOLUTIONS_SEND_PERIOD') ?: 0.2);
 
     class PosiljateljRasporeda implements MessageComponentInterface {
 
@@ -38,15 +37,7 @@ const TRAJANJE_SPAVANJA = 0.2;
                 $this->posalji_rezultate_klijentu();
             });
             $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
-            if ($this->jestWindowsLjuska) {
-                $env = null;
-            }
-            else {
-                $env = array(
-                    'LANG' => 'hr_HR.utf-8'     // taj locale bi trebao biti prethodno instaliran na sustavu: sudo locale-gen hr_HR; sudo locale-gen hr_HR.UTF-8; sudo update-locale
-                );
-            }
-            $this->process = new Process("swipl -s $lokacijaPrologSkripte", null, $env);
+            $this->process = new Process("swipl -s $lokacijaPrologSkripte");
             $this->process->start($this->loop);
             $this->prethodniNedovrseniRaspored = '';
             $this->process->stdout->on('data', function($rezultat) {
@@ -72,7 +63,6 @@ const TRAJANJE_SPAVANJA = 0.2;
                         $offset = $prevRetVal + 1;
                     }
                 }
-                usleep(1000000*TRAJANJE_SPAVANJA);
             });
 
             $this->process->stdout->on('end', function() {
@@ -126,14 +116,16 @@ use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
 
-    if ($argc === 5) {
+    if ($argc === 7) {
         ini_set('memory_limit', -1);
         set_time_limit(0);
         date_default_timezone_set('UTC');
         $jezik = $argv[1];
         $myIpAddress = $argv[2];
         $studij = $argv[3];
-        $prologCommand = $argv[4];
+        $akademskaGodina = $argv[4];
+        $semestar = $argv[5];
+        $prologCommand = $argv[6];
                 
         $posiljateljRasporeda = new PosiljateljRasporeda($prologCommand);
         while (true) {
