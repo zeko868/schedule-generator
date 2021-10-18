@@ -146,7 +146,7 @@
                         $process = proc_open("start /B php -f $lokacijaSkripteDaemona -- $phpScriptArgs", $descriptorspec, $pipes);
                     }
                     else {
-                        $process = proc_open("nohup php $phpLocation -f $lokacijaSkripteDaemona -- $phpScriptArgs &", $descriptorspec, $pipes);
+                        $process = proc_open("nohup php -f $lokacijaSkripteDaemona -- $phpScriptArgs &", $descriptorspec, $pipes);
                     }
                     if (is_resource($process)) {
                         $daemonPort = stream_get_contents($pipes[1]);
