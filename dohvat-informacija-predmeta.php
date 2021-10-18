@@ -13,42 +13,60 @@ $boje = [
 $vrsteNastavePoBojama = array_flip($boje);
 $trajanjeTjedna = 7*24*60*60;
 $trajanjeDana = 24*60*60;
-$zimskiSemestarPocetak = strtotime('22.09.' . date('Y'));
-$zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
-if (time() < $zimskiSemestarPocetak) {
-    $zimskiSemestarPocetak = strtotime('22.09.' . (date('Y') - 1));
-    $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak);
-}
-$ljetniSemestarPocetak = strtotime('+154 day', $zimskiSemestarPocetak);
 $trajanjeZimskihPraznikaTjedni = 2;
-$akademskaGodinaPocetak = date('Y', $zimskiSemestarPocetak);
-$akademskaGodinaKraj = date('Y', $ljetniSemestarPocetak);
-
-$trenutnoZimskiSemestar = time() < $ljetniSemestarPocetak;
-$nazivTrenutnogSemestra = $trenutnoZimskiSemestar ? 'zimski' : 'ljetni';
+if (isset($akademskaGodina) && isset($semestar)) {
+    list($akademskaGodinaPocetak, $akademskaGodinaKraj) = explode('/', $akademskaGodina);
+    $zimskiSemestarPocetak = strtotime('22.09.' . $akademskaGodinaPocetak);
+    $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
+    $ljetniSemestarPocetak = strtotime('+154 day', $zimskiSemestarPocetak);
+    
+    $nazivTrenutnogSemestra = $semestar;
+    $trenutnoZimskiSemestar = 'winter' === $nazivTrenutnogSemestra;
+}
+else {
+    $zimskiSemestarPocetak = strtotime('22.09.' . date('Y'));
+    $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak );
+    if (time() < $zimskiSemestarPocetak) {
+        $zimskiSemestarPocetak = strtotime('22.09.' . (date('Y') - 1));
+        $zimskiSemestarPocetak = strtotime( '+' . (7 - date('N', $zimskiSemestarPocetak) + 1) . ' day' , $zimskiSemestarPocetak);
+    }
+    $ljetniSemestarPocetak = strtotime('+154 day', $zimskiSemestarPocetak);
+    $akademskaGodinaPocetak = date('Y', $zimskiSemestarPocetak);
+    $akademskaGodinaKraj = date('Y', $ljetniSemestarPocetak);
+    
+    $trenutnoZimskiSemestar = time() < $ljetniSemestarPocetak;
+    $nazivTrenutnogSemestra = $trenutnoZimskiSemestar ? 'winter' : 'summer';
+}
 $pocetakTrenutnogSemestra = $trenutnoZimskiSemestar ? $zimskiSemestarPocetak : $ljetniSemestarPocetak;
 
-$nazivDatotekeRasporeda = "raspored_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_{$studij}.json";
-$nazivDatotekePredmeta = "predmeti_{$nazivTrenutnogSemestra}_{$studij}.json";
+$nazivDatotekeRasporeda = 'data' . DIRECTORY_SEPARATOR . "schedule_{$akademskaGodinaPocetak}_{$akademskaGodinaKraj}_{$nazivTrenutnogSemestra}_{$studij}.json";
+$nazivDatotekePredmeta = 'data' . DIRECTORY_SEPARATOR . "subjects_{$nazivTrenutnogSemestra}_{$studij}.json";
 
 $jestWindowsLjuska = explode(' ', php_uname(), 2)[0] === 'Windows';
 
+if (file_exists('shared-' . $nazivDatotekeRasporeda)) {
+    $nazivDatotekeRasporeda = 'shared-' . $nazivDatotekeRasporeda;
+}
 if (file_exists($nazivDatotekeRasporeda)) {
 
     $sadrzaj = file_get_contents($nazivDatotekeRasporeda);
 
     if ($sadrzaj !== false) {
         $termini = json_decode($sadrzaj, true);
+        if (file_exists('shared-' . $nazivDatotekePredmeta)) {
+            $nazivDatotekePredmeta = 'shared-' . $nazivDatotekePredmeta;
+        }
         $sifrePredmeta = json_decode(file_get_contents($nazivDatotekePredmeta), true);
-        return;
+        return true;
     }
 }
 
 $novaVerzijaLibXml = version_compare(phpversion('libxml'), '2.9.5') >= 0;
 
 error_reporting(E_ERROR | E_PARSE);
-
-//header('Content-type: text/json; charset=utf-8');
+if (!class_exists('DomDocument')) {     // check if php-xmlreader is installed
+    return false;
+}
 $doc = new DomDocument;
 
 // We need to validate our document before refering to the id
@@ -89,11 +107,11 @@ while (true) {
             $tr = $trElems[$i];
             if ($novaVerzijaLibXml) {
                 $sifra = $tr->childNodes[1]->textContent;
-                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'hrvatski' => $tr->childNodes[3]->childNodes[1]->textContent ];
+                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'croatian' => $tr->childNodes[3]->childNodes[1]->textContent ];
             }
             else {
                 $sifra = $tr->childNodes[0]->textContent;
-                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'hrvatski' => $tr->childNodes[2]->childNodes[1]->textContent ];
+                $sifrePredmeta[$sifra] = [ 'id' => $sifra, 'croatian' => $tr->childNodes[2]->childNodes[1]->textContent ];
             }
         }
         //}
@@ -112,8 +130,8 @@ foreach ($sifrePredmeta as $sifra => &$naziviPredmeta) {
 
     $obveznostPredmeta = [];
     $informacijeDiv = $doc->getElementById('informacije');
-    $naziviPredmeta['engleski'] = $informacijeDiv->childNodes[0]->childNodes[1]->childNodes[1]->childNodes[3]->textContent;
-    $hrvatskiNaziviPredmeta[$naziviPredmeta['hrvatski']] = &$naziviPredmeta;
+    $naziviPredmeta['english'] = $informacijeDiv->childNodes[0]->childNodes[1]->childNodes[1]->childNodes[3]->textContent;
+    $hrvatskiNaziviPredmeta[$naziviPredmeta['croatian']] = &$naziviPredmeta;
     $modelPracenjaDiv = $doc->getElementById('model_pracenja');
     if ($modelPracenjaDiv !== null) {   // zbog predmeta poput stručne prakse i diplomskog rada
         $redovniModelPracenjaDiv = $modelPracenjaDiv->childNodes[1]->childNodes[1]->childNodes[1]->childNodes[1];
@@ -293,22 +311,22 @@ function dodaj_u_raspored() {
         //$termini[$prethodniId] =
         $stavkaZaDodavanje =
             [
-                'predmet' => $sifraPredmeta,
-                'vrsta' => $vrstaNastave,
-                //'obveznost' => $obveznostPredmeta==='all' || in_array($vrstaNastave, $obveznostPredmeta),
-                'obveznost' => false,
-                'razdoblje' => [    // tjedni održavanja nastave
+                'subject' => $sifraPredmeta,
+                'type' => $vrstaNastave,
+                //'mandatory' => $obveznostPredmeta==='all' || in_array($vrstaNastave, $obveznostPredmeta),
+                'mandatory' => false,
+                'period' => [    // tjedni održavanja nastave
                     'start' => $pocetakRazdoblja,
-                    'kraj' => $zavrsetakRazdoblja
+                    'end' => $zavrsetakRazdoblja
                 ],
-                'termin' => [
-                    'dan' => $danUTjednu,
+                'timeslot' => [
+                    'weekday' => $danUTjednu,
                     'start' => date('H:i', $vrijemePocetka),
-                    'kraj' => date('H:i', $vrijemeZavrsetka)
+                    'end' => date('H:i', $vrijemeZavrsetka)
                 ],
-                'lokacija' => [
-                    'zgrada' => $zgrada,
-                    'prostorija' => $prostorija
+                'location' => [
+                    'building' => $zgrada,
+                    'room' => $prostorija
                 ]
             ];
         if (!isset($termini[$sifraPredmeta][$vrstaNastave]) || !in_array($stavkaZaDodavanje, $termini[$sifraPredmeta][$vrstaNastave])) {
@@ -353,7 +371,7 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
     if ($obveznostNastave === 'all') {
         foreach (array_keys($termini[$sifraPredmeta]) as $vrstaNastave) {
             foreach (array_keys($termini[$sifraPredmeta][$vrstaNastave]) as $scheduleId) {
-                $termini[$sifraPredmeta][$vrstaNastave][$scheduleId]['obveznost'] = true;
+                $termini[$sifraPredmeta][$vrstaNastave][$scheduleId]['mandatory'] = true;
             }
         }
     }
@@ -364,7 +382,7 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
             if (array_key_exists($obveznaVrsta, $termini[$sifraPredmeta])) {
                 $found[]= $obveznaVrsta;
                 foreach (array_keys($termini[$sifraPredmeta][$obveznaVrsta]) as $scheduleId) {
-                    $termini[$sifraPredmeta][$obveznaVrsta][$scheduleId]['obveznost'] = true;
+                    $termini[$sifraPredmeta][$obveznaVrsta][$scheduleId]['mandatory'] = true;
                 }
             }
             else {
@@ -402,7 +420,7 @@ foreach ($obveznostNastavePoPredmetima as $sifraPredmeta => $obveznostNastave) {
                 if (isset($substitut)) {
                     unset($josNeobvezni[array_search($substitut, $josNeobvezni)]);
                     foreach (array_keys($termini[$sifraPredmeta][$substitut]) as $scheduleId) {
-                        $termini[$sifraPredmeta][$substitut][$scheduleId]['obveznost'] = true;
+                        $termini[$sifraPredmeta][$substitut][$scheduleId]['mandatory'] = true;
                     }
                 }
             }
