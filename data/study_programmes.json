@@ -1,0 +1,120 @@
+{
+    "categories": {
+        "1": {
+            "translations": {
+                "croatian": "Preddiplomski sveučilišni studijski programi",
+                "english": "Undergraduate study programmes"
+            }
+        },
+        "2": {
+            "translations": {
+                "croatian": "Preddiplomski stručni studijski programi",
+                "english": "Vocational study programmes"
+            }
+        },
+        "3": {
+            "translations": {
+                "croatian": "Diplomski sveučilišni studijski programi",
+                "english": "Graduate study programmes"
+            }
+        },
+        "4": {
+            "translations": {
+                "croatian": "Poslijediplomski specijalistički studijski programi",
+                "english": "Postgraduate specialist study programmes"
+            }
+        },
+        "5": {
+            "translations": {
+                "croatian": "Poslijediplomski doktorski studijski programi",
+                "english": "Postgraduate doctoral study programmes"
+            }
+        }
+    },
+    "programmes": {
+        "1": {
+            "category": "1",
+            "translations": {
+                "croatian": "Informacijski i poslovni sustavi",
+                "english": "Information Systems and Business Systems"
+            }
+        },
+        "2": {
+            "category": "1",
+            "translations": {
+                "croatian": "Ekonomika poduzetništva",
+                "english": "Economics of Entrepreneurship"
+            }
+        },
+        "3": {
+            "category": "2",
+            "translations": {
+                "croatian": "Primjena informacijske tehnologije u poslovanju",
+                "english": "Information Technology in Business Application"
+            }
+        },
+        "4": {
+            "category": "3",
+            "translations": {
+                "croatian": "Informacijsko i programsko inženjerstvo",
+                "english": "Information and Software Engineering"
+            }
+        },
+        "5": {
+            "category": "3",
+            "translations": {
+                "croatian": "Organizacija poslovnih sustava",
+                "english": "Business Systems Organization"
+            }
+        },
+        "6": {
+            "category": "3",
+            "translations": {
+                "croatian": "Baze podataka i baze znanja",
+                "english": "Databases and Knowledge Bases"
+            }
+        },
+        "7": {
+            "category": "3",
+            "translations": {
+                "croatian": "Informatika u obrazovanju",
+                "english": "Teacher of Informatics"
+            }
+        },
+        "8": {
+            "category": "3",
+            "translations": {
+                "croatian": "Ekonomika poduzetništva",
+                "english": "Economics of Entrepreneurship"
+            }
+        },
+        "9": {
+            "category": "4",
+            "translations": {
+                "croatian": "Inženjerstvo i reinženjerstvo organizacija informacijskog doba",
+                "english": "Information Age Organizations Engineering and Re-Engineering"
+            }
+        },
+        "10": {
+            "category": "4",
+            "translations": {
+                "croatian": "Upravljanje sigurnošću i revizijom informacijskih sustava",
+                "english": "Information Systems Security Management and Auditing"
+            }
+        },
+        "11": {
+            "category": "4",
+            "translations": {
+                "croatian": "Menadžment poslovnih sustava",
+                "english": "Business Systems Management"
+            }
+        },
+        "12": {
+            "category": "5",
+            "translations": {
+                "croatian": "Informacijske znanosti",
+                "english": "Information Science"
+            }
+        }
+    }
+}
