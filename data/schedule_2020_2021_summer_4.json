@@ -1,0 +1,794 @@
+[
+    {
+        "subject": "93129",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "SDVŽ",
+            "room": "D 7"
+        }
+    },
+    {
+        "subject": "93129",
+        "type": "s",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "16:00",
+            "end": "18:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 10"
+        }
+    },
+    {
+        "subject": "93129",
+        "type": "s",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "14:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 3"
+        }
+    },
+    {
+        "subject": "93126",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "12:00",
+            "end": "14:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 4"
+        }
+    },
+    {
+        "subject": "93126",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "18:00",
+            "end": "20:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 4"
+        }
+    },
+    {
+        "subject": "93126",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "16:00",
+            "end": "18:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 4"
+        }
+    },
+    {
+        "subject": "93126",
+        "type": "p",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "14:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 3"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "09:00",
+            "end": "12:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 3"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "15:00",
+            "end": "16:30"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "16:30",
+            "end": "18:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "18:00",
+            "end": "19:30"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "19:30",
+            "end": "21:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "13:15",
+            "end": "15:50"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "15:50",
+            "end": "18:25"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "18:25",
+            "end": "21:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93123",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "16:00",
+            "end": "18:30"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 6"
+        }
+    },
+    {
+        "subject": "93130",
+        "type": "p",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "10:00",
+            "end": "12:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 10"
+        }
+    },
+    {
+        "subject": "93130",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "12:00",
+            "end": "13:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93130",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "13:00",
+            "end": "14:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 7"
+        }
+    },
+    {
+        "subject": "93133",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 16
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "14:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 11"
+        }
+    },
+    {
+        "subject": "93133",
+        "type": "v",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 16
+        },
+        "timeslot": {
+            "weekday": 2,
+            "start": "16:00",
+            "end": "19:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 11"
+        }
+    },
+    {
+        "subject": "93124",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "07:30",
+            "end": "09:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 3"
+        }
+    },
+    {
+        "subject": "93124",
+        "type": "s",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "12:00",
+            "end": "13:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 9"
+        }
+    },
+    {
+        "subject": "93125",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 16
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "13:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 11"
+        }
+    },
+    {
+        "subject": "93132",
+        "type": "p",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "16:00",
+            "end": "18:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93132",
+        "type": "s",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "18:00",
+            "end": "19:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93120",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "08:30",
+            "end": "10:30"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 1"
+        }
+    },
+    {
+        "subject": "93120",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "07:00",
+            "end": "08:30"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93120",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "10:30",
+            "end": "12:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93120",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "12:00",
+            "end": "13:30"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93119",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93119",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "15:30",
+            "end": "17:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93119",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "14:00",
+            "end": "15:30"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93128",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "11:00",
+            "end": "12:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 6"
+        }
+    },
+    {
+        "subject": "93128",
+        "type": "s",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "12:00",
+            "end": "14:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93131",
+        "type": "p",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 8"
+        }
+    },
+    {
+        "subject": "93131",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93131",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 3,
+            "start": "08:00",
+            "end": "10:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93131",
+        "type": "lv",
+        "mandatory": true,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 4,
+            "start": "14:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 15"
+        }
+    },
+    {
+        "subject": "93127",
+        "type": "p",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "10:00",
+            "end": "12:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 2"
+        }
+    },
+    {
+        "subject": "93127",
+        "type": "s",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 5,
+            "start": "12:00",
+            "end": "13:00"
+        },
+        "location": {
+            "building": "FOI1",
+            "room": "D 7"
+        }
+    },
+    {
+        "subject": "93127",
+        "type": "lv",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "14:00",
+            "end": "16:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 5"
+        }
+    },
+    {
+        "subject": "93127",
+        "type": "lv",
+        "mandatory": false,
+        "period": {
+            "start": 1,
+            "end": 17
+        },
+        "timeslot": {
+            "weekday": 1,
+            "start": "16:00",
+            "end": "18:00"
+        },
+        "location": {
+            "building": "FOI2",
+            "room": "D 5"
+        }
+    }
+]
