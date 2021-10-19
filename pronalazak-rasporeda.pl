@@ -66,19 +66,19 @@ dohvatiCinjenice(UriResursa) :-
 		close_any(Close)
 	),
 	member(json(Clan), Sadrzaj),
-	member('predmet' = Predmet, Clan),
-	member('vrsta' = Vrsta, Clan),
-	member('obveznost' = Obveznost, Clan),
-	member('razdoblje' = json(Razdoblje), Clan),
+	member('subject' = Predmet, Clan),
+	member('type' = Vrsta, Clan),
+	member('mandatory' = Obveznost, Clan),
+	member('period' = json(Razdoblje), Clan),
 	member('start' = PocTjedan, Razdoblje),
-	member('kraj' = ZavTjedan, Razdoblje),
-	member('termin' = json(Termin), Clan),
-	member('dan' = Dan, Termin),
+	member('end' = ZavTjedan, Razdoblje),
+	member('timeslot' = json(Termin), Clan),
+	member('weekday' = Dan, Termin),
 	member('start' = PocVrijeme, Termin),
-	member('kraj' = ZavVrijeme, Termin),
-	member('lokacija' = json(Lokacija), Clan),
-	member('zgrada' = Zgrada, Lokacija),
-	member('prostorija' = Prostorija, Lokacija),
+	member('end' = ZavVrijeme, Termin),
+	member('location' = json(Lokacija), Clan),
+	member('building' = Zgrada, Lokacija),
+	member('room' = Prostorija, Lokacija),
 	atomic_list_concat([HpocetakStr,MpocetakStr|_], ':', PocVrijeme),
 	atom_number(HpocetakStr, Hpocetak),
 	atom_number(MpocetakStr, Mpocetak),
@@ -147,7 +147,7 @@ dohvatiCinjenice(UriResursa) :-
 	minBrojDanaBezNastave/1,						% minBrojDanaBezNastave(BrojDanaBezNastave:integer)		% postoji i istoimeni predikat arnosti 2 koji definira činjenicu s ovim termom
 	bezNastaveNaDan/1,								% bezNastaveNaDan(NazivDanaBezNastave:atom)
 	ukupniBrojDana/1,								% ukupniBrojDana(UkupniBrojDanaUTjednu:integer)
-	trajanjePutovanjaDoDrugeZgrade/1,				% trajanjePutovanjaDoDrugeZgrade(TrajanjePuta:trajanje/2)
+	trajanjePutovanjaIzmedjuZgrada/3,				% trajanjePutovanjaIzmedjuZgrada(IzvorisnaZgrada:atom, OdredisnaZgrada:atom, TrajanjePuta:trajanje/2)
 	upisano/1,										% upisano(NazivPredmeta:atom)
 	dan/3,											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
 	prosliRaspored/4
@@ -292,7 +292,7 @@ serijalizirajUJson(SerijaliziraniObjekt) :-
 	format(string(Kraj), "~|~`0t~d~2+:~|~`0t~d~2+", [Hkraj, Mkraj]),
 	odrzavanje(Predmet, Vrsta, Wstart, Wkraj),
 	dan(RedniBrojDana, NazivDana, _),
-	with_output_to(string(SerijaliziraniObjekt), json_write(current_output, json{predmet:Predmet,vrsta:Vrsta,razdoblje:json{start:Wstart,kraj:Wkraj},termin:json{dan:RedniBrojDana,start:Pocetak,kraj:Kraj},lokacija:json{zgrada:Zgrada,prostorija:Prostorija}}, [width(0)]))	%bolje performanse daje korištenje terma string/1 umjesto atom/1, ali rezultat kasnije zahtijeva izradu vlastite varijante atomic_list_concat/3 predikata za stringove
+	with_output_to(string(SerijaliziraniObjekt), json_write(current_output, json{subject:Predmet,type:Vrsta,period:json{start:Wstart,end:Wkraj},timeslot:json{weekday:RedniBrojDana,start:Pocetak,end:Kraj},location:json{building:Zgrada,room:Prostorija}}, [width(0)]))	%bolje performanse daje korištenje terma string/1 umjesto atom/1, ali rezultat kasnije zahtijeva izradu vlastite varijante atomic_list_concat/3 predikata za stringove
 .
 
 /**
@@ -346,7 +346,8 @@ nadjiRaspored([stavka(Predmet, Vrsta)|Preostali]) :-
 	),
 	odrzavanje(Predmet, Vrsta, Wpocetak, Wkraj),
 	(
-	not(pristajeURaspored(Termin, Wpocetak, Wkraj, Lokacija)),
+	lokacija(Zgrada, _) = Lokacija,
+	not(pristajeURaspored(Termin, Wpocetak, Wkraj, Zgrada)),
 	termin(NazivDana, Pocetak, Kraj) = Termin,
 	trajanjeNastavePoDanima(NazivDana, DosadasnjeTrajanjeNastave),
 	trajanjePredmetaPoDanima(NazivDana, Predmet, DosadasnjeTrajanjePredmeta),
@@ -475,8 +476,12 @@ postojiPreklapanje(termin(Pocetak1, Kraj1), Wstart1, Wkraj1, Zgrada1, termin(Poc
 	Wkraj1 > Wstart2 ->
 		true
 		;
-		Zgrada1 \== Zgrada2,
-		trajanjePutovanjaDoDrugeZgrade(TrajanjePutovanja),
+		(
+			trajanjePutovanjaIzmedjuZgrada(Zgrada1, Zgrada2, TrajanjePutovanja) ->
+				true
+				;
+				TrajanjePutovanja = trajanje(0, 0)
+		),
 		Razlika1 \\= Kraj1 \\- Pocetak2,
 		Razlika2 \\= Kraj2 \\- Pocetak1,
 		(
@@ -788,7 +793,7 @@ minBrojDanaBezNastave(MinBrojDanaBezNastave, IskljucujuciVikende) :-
 %maxBrojDanaDugoTrajanjeNastave(2, trajanje(5, 0)).
 %maxBrojUzastopnihDanaRaniPocetak(2, vrijeme(8, 0)).
 %maxBrojUzastopnihDanaDugoTrajanjeNastave(2, trajanje(5, 0)).
-%trajanjePutovanjaDoDrugeZgrade(trajanje(0, 7)).
+%trajanjePutovanjaIzmedjuZgrada('FOI1', 'FOI2', trajanje(0, 7)).
 %:- call(minBrojDanaBezNastave(1, true)).
 %bezNastaveNaDan('petak').
 

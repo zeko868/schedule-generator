@@ -36,10 +36,16 @@ nav {
 .middle > button[type="submit"] {
     margin-bottom: 10px !important;
 }
-.error {
+span.error {
     text-align: center;
     color: red;
     margin-top: 10px !important;
+}
+input[data-geocode-status="error"] {
+    background-color: red;
+}
+input[data-geocode-status="warning"] {
+    background-color: yellow;
 }
 .ui-dialog .ui-state-error {
     padding: .3em;
@@ -57,10 +63,14 @@ nav {
     display: none;
 }
 input[type="radio"] {
-    margin-right: 20px !important;
+    margin-right: 0px !important;
 }
-#forma-ogranicenja label {
-    margin: 0 10px;
+#forma-ogranicenja span > label {
+    margin: auto 10px;
+}
+caption {
+    color: black;
+    font-weight: 700;
 }
 .brisi-ogranicenje {
     width: 40px;
@@ -78,7 +88,7 @@ input[type="number"] {
 }
 
 #forma-ogranicenja select {
-    width: 10vw;
+    max-width: 10vw;
 }
 
 #calendar {
@@ -86,14 +96,30 @@ input[type="number"] {
     width: 99.95%;
 }
 
-#home > * {
+#home {
+    text-align: center;
+}
+
+#home > form > * {
     width: auto;
     margin: 0 auto;
     text-align: center;
     display: block;
 }
 
-#study ~ button[type="submit"] {
+#home > label.language-selection {
+    margin-left: 20px;
+}
+
+#home > form {
+    display: none;
+}
+
+#home > form > fieldset > label {
+    margin: 0 10px;
+}
+
+#home > form > button[type="submit"] {
     display: block;
     margin: 0 auto;
     padding: 0 3em;
@@ -108,12 +134,19 @@ input[type="number"] {
 }
 
 .divTimeSetterContainer input.hours, .divTimeSetterContainer input.minutes {
-    width: 30px;
+    width: 21px;
 }
 
 input[type="radio"] {
     position: relative;
     top: 1px;
+}
+
+input[type="time"] {
+    border-radius: 5px;
+    border-style: solid;
+    border-color: #aaa;
+    padding: 0px;
 }
 
 #legend {
@@ -129,4 +162,93 @@ input[type="radio"] {
     width: 20px;
     height: 20px;
     float: left;
+}
+
+#distance-matrix-table {
+    float: left;
+}
+
+#distance-matrix-table > tfoot > tr > td:last-child, #distance-matrix-table > tbody > tr:first-child > th {
+    text-align: center;
+}
+
+#distance-matrix-table > tbody > tr > th:first-child {
+    text-align: right;
+}
+
+div.trajanje div.timeValueBorder, div.trajanje div.button-time-control {
+    background-color: white;
+}
+
+div.trajanje.disabled div.timeValueBorder, div.trajanje.disabled div.timeValueBorder input {
+    background-color: #bbb;
+}
+
+div.trajanje.disabled div.timeValueBorder div.button-time-control {
+    color: #bbb;
+}
+
+div.trajanje.disabled div.timeValueBorder div.button-time-control div.updownButton:hover {
+    background-color: #eee;
+}
+
+#forma-ogranicenja:not(:empty) + #no-constraints-hint {
+    display: none;
+}
+
+#map-canvas {
+    height: 40vh !important;
+    width: 70vw !important;
+    margin: 0 auto;
+}
+
+#forma-pozicija-zgrada > table tr > :nth-child(2) {
+    width: 100%;
+    padding-left: 10px;
+}
+
+#forma-pozicija-zgrada > table tr input.address {
+    width: 90%;
+}
+
+#forma-pozicija-zgrada > table tr > :first-child {
+    text-align: right;
+}
+
+#forma-pozicija-zgrada {
+    margin-top: 10px;
+    max-height: 10em;
+    overflow: hidden visible;
+}
+
+.ui-state-highlight {
+    background: yellow !important;
+    border: none !important;
+}
+
+legend {
+    border: none;
+    max-width: 100%;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 0px;
+}
+
+#pageloader {
+    background: rgba( 255, 255, 255, 0.8 );
+    background-image: url('../images/loading.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 50vmin;
+    visibility: hidden;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+}
+
+#upisani, #dostupni {
+    max-height: 195px;
 }
