@@ -591,7 +591,7 @@ $(document).ready(function() {
         hiddenDays: [0],
         editable: false,
         eventLimit: true,
-        lang: "hr",
+        lang: momentJsLanguageCode,
         header: {
             left: "prev,next today",
             center: "title",

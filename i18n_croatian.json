@@ -97,5 +97,6 @@
         "load":"Učitaj",
         "timetablingUnavailableForGivenRequest":"Rješavanje problema pronalska zadovoljavajućih rasporeda sati nije moguće za dani zahtjev. Razlog tome su najvjerojatnije pojavljene poteškoće kod generiranja/dorade podataka",
         "studyProgrammeNotSelected":"Potrebno je označiti neki studijski program!"
-    }
+    },
+    "momentJsLanguageCode":"hr"
 }
