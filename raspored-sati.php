@@ -130,7 +130,8 @@
                         $cmd = iconv('utf-8', 'windows-1250', $cmd);
                     }
                     $descriptorspec = array(
-                        1 => array('pipe', 'w')
+                        1 => array('pipe', 'w'),
+                        2 => array('pipe', '')
                     );
                     $lokacijaSkripteDaemona = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.php';
                     $params = [
