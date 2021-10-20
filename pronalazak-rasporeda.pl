@@ -52,6 +52,8 @@ odrzavanje('Logičko programiranje', lv, 1, 11).
 odrzavanje('Logičko programiranje', s, 1, 16).
 */
 
+pronadjeniBrojRjesenja(0).
+
 /**
  * dohvatiCinjenice(+UriResursa:atom) is failure.
  * 
@@ -150,7 +152,9 @@ dohvatiCinjenice(UriResursa) :-
 	trajanjePutovanjaIzmedjuZgrada/3,				% trajanjePutovanjaIzmedjuZgrada(IzvorisnaZgrada:atom, OdredisnaZgrada:atom, TrajanjePuta:trajanje/2)
 	upisano/1,										% upisano(NazivPredmeta:atom)
 	dan/3,											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
-	prosliRaspored/4
+	prosliRaspored/4,
+	trazeniBrojRjesenja/1,
+	pronadjeniBrojRjesenja/1
 .
 
 /**
@@ -295,6 +299,19 @@ serijalizirajUJson(SerijaliziraniObjekt) :-
 	with_output_to(string(SerijaliziraniObjekt), json_write(current_output, json{subject:Predmet,type:Vrsta,period:json{start:Wstart,end:Wkraj},timeslot:json{weekday:RedniBrojDana,start:Pocetak,end:Kraj},location:json{building:Zgrada,room:Prostorija}}, [width(0)]))	%bolje performanse daje korištenje terma string/1 umjesto atom/1, ali rezultat kasnije zahtijeva izradu vlastite varijante atomic_list_concat/3 predikata za stringove
 .
 
+% Zaustavi izvođenje programa ukoliko je pribavljen tražen broj rješenja
+zaustaviIzvodjenje() :-
+    retract(pronadjeniBrojRjesenja(DosadasnjiBrojRjesenja)),
+    NoviBrojRjesenja is DosadasnjiBrojRjesenja + 1,
+    asserta(pronadjeniBrojRjesenja(NoviBrojRjesenja)),
+    (
+    trazeniBrojRjesenja(NoviBrojRjesenja) ->
+        halt()
+        ;
+        true
+    )
+.
+
 /**
  * nadjiRaspored(+Lista:list<stavka/2>) is failure.
  *
@@ -313,7 +330,7 @@ nadjiRaspored([]) :- %findall(stavka(Predmet, Vrsta, NazivDana, Hpocetak, Mpocet
 		generiraniRaspored(Predmet, Vrsta, termin(NazivDana, vrijeme(Hpocetak, Mpocetak), vrijeme(Hkraj, Mkraj)), lokacija(Zgrada, Prostorija)),
 		format(atom(Redak), "|~a~t~40||~t~a~t~4+|~t~a~t~12+|~t~d:~d~t~8+|~t~d:~d~t~8+|~t~a > ~a~t~12+|~n", [Predmet, Vrsta, NazivDana, Hpocetak, Mpocetak, Hkraj, Mkraj, Zgrada, Prostorija]),
 		write(Redak),
-		halt()
+		zaustaviIzvodjenje()
 .
 */
 
@@ -326,7 +343,7 @@ nadjiRaspored([]) :-
 		%atomic_list_concat(NizSerijaliziranihObjekata, ',', SerijaliziraniObjekti),
 		string_list_concat(NizSerijaliziranihObjekata, ",", SerijaliziraniObjekti),	% boljih performansi od gornjeg
 		write("["), write(SerijaliziraniObjekti), write("]"), nl(),
-		halt()
+		zaustaviIzvodjenje()
 .
 
 % Korak rekurzije predikata nadjiRaspored/1

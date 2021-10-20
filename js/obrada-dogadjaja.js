@@ -25,6 +25,26 @@ var geocoder;
 var markersArray = new Array(zgrade.length).fill(null);
 var bounds;
 
+var elementSUkupnimBrojem = $("#ukupno-kombinacija");
+
+if (josKombinacija) {
+    var brojKombinacijaRasporeda = parseInt(elementSUkupnimBrojem.html());
+    $("#possible-incompleteness-note").html(tekst['soFar']);
+    if (brojKombinacijaRasporeda > 1) {
+        omoguciTipku($("#posljedni"));
+    }
+}
+else {
+    var brojKombinacijaRasporeda = parseInt(elementSUkupnimBrojem.html());
+    naznaciDosegnutKraj();
+    if (brojKombinacijaRasporeda === 1) {
+        onemoguciTipku($("#sljedeci"));
+    }
+    else {
+        omoguciTipku($("#posljedni"));
+    }
+}
+
 function initializeDistCalc() {
     var [lat, lng] = initialMapCenterGeocoordinates.split(",");
     var opts = {
@@ -395,7 +415,6 @@ $("#prethodni").click(function() {
 $("#sljedeci").click(function() {
     var tipkaSljedeci = $(this);
     var elementSTrenutnimBrojem = $("#trenutna-kombinacija");
-    var elementSUkupnimBrojem = $("#ukupno-kombinacija");
     var brojKombinacije = parseInt(elementSTrenutnimBrojem.html())+1;
     var brojKombinacijaRasporeda = parseInt(elementSUkupnimBrojem.html());
     if (brojKombinacije <= brojKombinacijaRasporeda) {
@@ -442,24 +461,34 @@ $("#sljedeci").click(function() {
             data : dataToSend,
             dataType: "json",
             success: function(data) {
-                if (data) {
-                    kodoviRasporeda.push(data);
+                if (data.length) {
+                    for (var raspored of data) {
+                        kodoviRasporeda.push(raspored);
+                        brojKombinacijaRasporeda++;
+                    }
                     elementSTrenutnimBrojem.html(brojKombinacije);
-                    elementSUkupnimBrojem.html(brojKombinacije);
+                    elementSUkupnimBrojem.html(brojKombinacijaRasporeda);
                     ucitajRaspored(brojKombinacije);
                     omoguciTipku($("#prvi"));
                     omoguciTipku($("#prethodni"));
-                    $("#possible-incompleteness-note").html(tekst["soFar"]);
+                    if (data.length === batchSize) {
+                        $("#possible-incompleteness-note").html(tekst["soFar"]);
+                    }
+                    else {
+                        if (data.length === 1) {
+                            onemoguciTipku(tipkaSljedeci);
+                        }
+                        naznaciDosegnutKraj();
+                    }
+                    if (data.length > 1) {
+                        omoguciTipku($("#posljedni"));
+                    }
                 }
                 else {
-                    josKombinacija = false;
                     onemoguciTipku(tipkaSljedeci);
-                    $("#possible-incompleteness-note").html(tekst["endReached"]);
-                    setInterval(function() {
-                        $("#possible-incompleteness-note").hide();
-                    }, 5000);
+                    onemoguciTipku($("#posljedni"));
+                    naznaciDosegnutKraj();
                 }
-                onemoguciTipku($("#posljedni"));
             },
             error: function() {
                 $("#possible-incompleteness-note").html("");
@@ -497,6 +526,14 @@ function ucitajRaspored(pozicija) {
     $("#calendar").fullCalendar("removeEvents");
     $("#calendar").fullCalendar("addEventSource", kodoviRasporeda[pozicija-1]);
     $("#calendar").fullCalendar("refetchEvents");
+}
+
+function naznaciDosegnutKraj() {
+    josKombinacija = false;
+    $("#possible-incompleteness-note").html(tekst["endReached"]);
+    setInterval(function() {
+        $("#possible-incompleteness-note").hide();
+    }, 5000);
 }
 
 function dodajOgranicenje() {

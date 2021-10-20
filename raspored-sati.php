@@ -1,6 +1,6 @@
 <?php
     function dohvati_sljedeci_zadovoljavajuci_raspored() {
-        global $sifrePredmeta, $boje, $vrsteNastavePoBojama, $studij, $semestar, $akademskaGodina, $naziviDana, $jezik, $serijaliziraniTerminiPoVrstamaPoPredmetima, $brojKombinacijaRasporeda, $serijaliziraneZgrade;
+        global $sifrePredmeta, $boje, $vrsteNastavePoBojama, $studij, $semestar, $akademskaGodina, $naziviDana, $jezik, $serijaliziraniTerminiPoVrstamaPoPredmetima, $brojKombinacijaRasporeda, $serijaliziraneZgrade, $batchSize;
         $trajanjeTjedna = 7*24*60*60;
         $trajanjeDana = 24*60*60;
         $boje = [
@@ -88,7 +88,7 @@
             }
             $putanja = dirname($_SERVER['PHP_SELF']);
             $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, halt().";
+            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), asserta(trazeniBrojRjesenja($batchSize)), $cmdTrazi, halt().";
             if ($jestWindowsLjuska) {
                 $cmd = iconv('utf-8', 'windows-1250', $cmd);
             }
@@ -152,43 +152,38 @@
             $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
             $rasporedi = [&$termini];
         }
-        if (empty($rasporedi)) {
-            echo 'null';
-        }
-        else {
-            $stavkaId = 0;
-            $kodRasporeda = [];
-            foreach ($rasporedi as $raspored) {
-                foreach ($raspored as $stavka) {
-                    $sifraPredmeta = $stavka['subject'];
-                    $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                    $pocetniTjedan = $stavka['period']['start'];
-                    $trajanjePredmeta = $stavka['period']['end'] - $pocetniTjedan + 1;
-                    $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
-                    $pomakOdPocetkaTjedna = $stavka['timeslot']['weekday'] - 1;
-                    $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
-                    $vrijemePocetka = $stavka['timeslot']['start'];
-                    $vrijemeZavrsetka = $stavka['timeslot']['end'];
-                    $boja = $boje[$stavka['type']];
-                    $obradjeniZimskiPraznici = false;
-                    for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
-                        if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
-                            $odrzavanje += 2*$trajanjeTjedna;
-                            $obradjeniZimskiPraznici = true;
-                        }
-                        $datumOdrzavanja = date('Y-m-d', $odrzavanje);
-                        $lokacija = $stavka['location'];
-                        $kodRasporeda[] =  "{\"itemid\":$stavkaId, \"subjectid\":$sifraPredmeta, \"title\": \"$naziviPredmeta[$jezik]\\n$lokacija[building] > $lokacija[room]\", \"start\": \"{$datumOdrzavanja}T{$vrijemePocetka}:00\", \"end\": \"{$datumOdrzavanja}T{$vrijemeZavrsetka}:00\", \"color\": \"$boja\"}";
-                        $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
-                        //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
+        $stavkaId = 0;
+        $kodSvihRasporeda = [];
+        foreach ($rasporedi as $raspored) {
+            $kodStavkiRasporeda = [];
+            foreach ($raspored as $stavka) {
+                $sifraPredmeta = $stavka['subject'];
+                $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
+                $pocetniTjedan = $stavka['period']['start'];
+                $trajanjePredmeta = $stavka['period']['end'] - $pocetniTjedan + 1;
+                $pocetakZimskihPraznika = strtotime("24.12.$akademskaGodinaPocetak");
+                $pomakOdPocetkaTjedna = $stavka['timeslot']['weekday'] - 1;
+                $odrzavanje = $pocetakTrenutnogSemestra + ($pocetniTjedan - 1)*$trajanjeTjedna + $pomakOdPocetkaTjedna*$trajanjeDana;
+                $vrijemePocetka = $stavka['timeslot']['start'];
+                $vrijemeZavrsetka = $stavka['timeslot']['end'];
+                $boja = $boje[$stavka['type']];
+                $obradjeniZimskiPraznici = false;
+                for ($tjedan = 0; $tjedan < $trajanjePredmeta; $tjedan++) {
+                    if ($trenutnoZimskiSemestar && !$obradjeniZimskiPraznici && $odrzavanje >= $pocetakZimskihPraznika) {
+                        $odrzavanje += 2*$trajanjeTjedna;
+                        $obradjeniZimskiPraznici = true;
                     }
-                    $stavkaId++;
+                    $datumOdrzavanja = date('Y-m-d', $odrzavanje);
+                    $lokacija = $stavka['location'];
+                    $kodStavkiRasporeda[] =  "{\"itemid\":$stavkaId, \"subjectid\":$sifraPredmeta, \"title\": \"$naziviPredmeta[$jezik]\\n$lokacija[building] > $lokacija[room]\", \"start\": \"{$datumOdrzavanja}T{$vrijemePocetka}:00\", \"end\": \"{$datumOdrzavanja}T{$vrijemeZavrsetka}:00\", \"color\": \"$boja\"}";
+                    $odrzavanje += $trajanjeTjedna;   // uzrokuje problem s prelaska ljetnog vremena na zimsko kad jedan dan traje 25 sati i zbog D.M.Y 00:00 postane D.M.Y+6D 23:00 umjesto D.M.Y+7D 00:00
+                    //$odrzavanje = strtotime("+1 week", $odrzavanje);  // bila bi alternativa za rješavanje problema ljetnog vremena da se ne koristi poziv funkcije date_default_timezone_set('UTC')
                 }
+                $stavkaId++;
             }
-            echo '[';
-            echo implode(',', $kodRasporeda);
-            echo ']';
+            $kodSvihRasporeda[] = '[' . implode(',', $kodStavkiRasporeda) . ']';
         }
+        echo '[' . implode(',', $kodSvihRasporeda) . ']';
     }
 
     date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
@@ -218,6 +213,8 @@
         $krajAkademskeGodine = $pocetakAkademskeGodine + 1;
         $akademskeGodine[]= "$pocetakAkademskeGodine/$krajAkademskeGodine";
     }
+
+    $batchSize = getenv('AJAX_MAX_FETCH_SIZE') ?: 10;
 
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header("Content-Type: application/json");
@@ -261,16 +258,13 @@
             var googleMapsApiKey = "<?= getenv('GOOGLE_MAPS_API_KEY') ?>";
             var initialMapCenterGeocoordinates = "<?= getenv('INITIAL_MAP_CENTER_GEOCOORDINATES') ?: '45,16' ?>";
             var initialMapZoomLevel = <?= getenv('INITIAL_MAP_ZOOM_LEVEL') ?: 7 ?>;
+            var batchSize = <?= $batchSize ?>;
             var naziviDana = <?= json_encode($naziviDana) ?>;
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
-            var kodoviRasporeda = [
+            var kodoviRasporeda = <?php dohvati_sljedeci_zadovoljavajuci_raspored(); ?>;
             <?php
-            dohvati_sljedeci_zadovoljavajuci_raspored();
-            ?>
-            ];
-            <?php
-            echo 'var josKombinacija = ' . ($brojKombinacijaRasporeda===1 ? 'true' : 'false') . ';';
+            echo 'var josKombinacija = ' . ($brojKombinacijaRasporeda===$batchSize ? 'true' : 'false') . ';';
             echo 'var vrsteNastavePoBojama = ' . json_encode($vrsteNastavePoBojama) . ';';
             if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
                 $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
@@ -326,11 +320,11 @@
                 <nav>
                     <button type="button" id="prvi" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&lt;&lt;</button>
                     <button type="button" id="prethodni" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&lt;</button>
-                    <span><span id="trenutna-kombinacija">1</span> <?= $tekst->outOf ?> <span id="ukupno-kombinacija">1</span></span>
+                    <span><span id="trenutna-kombinacija">1</span> <?= $tekst->outOf ?> <span id="ukupno-kombinacija"><?= $brojKombinacijaRasporeda ?></span></span>
                     <button type="button" id="sljedeci" class="ui-button ui-corner-all ui-widget">&gt;</button>
                     <button type="button" id="posljedni" class="ui-button ui-state-disabled ui-corner-all ui-widget" disabled="disabled">&gt;&gt;</button>
                     <br/>
-                    <span id="possible-incompleteness-note"><?= $tekst->other->soFar ?></span>
+                    <span id="possible-incompleteness-note"></span>
                 </nav>
                 <?php
                     }
