@@ -1,4 +1,13 @@
 <?php
+    function loadI18nFileContent($languageName) {
+        $nazivDatoteke = "data/i18n_$languageName.json";
+        if (file_exists('shared-' . $nazivDatoteke)) {
+            $nazivDatoteke = 'shared-' . $nazivDatoteke;
+        }
+        $result = json_decode(file_get_contents($nazivDatoteke));
+        return $result;
+    }
+
     function dohvati_sljedeci_zadovoljavajuci_raspored() {
         global $sifrePredmeta, $boje, $vrsteNastavePoBojama, $studij, $semestar, $akademskaGodina, $naziviDana, $jezik, $serijaliziraniTerminiPoVrstamaPoPredmetima, $brojKombinacijaRasporeda, $serijaliziraneZgrade, $batchSize;
         $trajanjeTjedna = 7*24*60*60;
@@ -199,7 +208,10 @@
             $jezik = 'croatian';
         }
     }
-    $tekst = json_decode(file_get_contents("i18n_$jezik.json"));
+    $tekst = loadI18nFileContent($jezik);
+    if ($tekst === null) {
+        die('File with translation strings of requested language cannot be found or does not contain valid JSON data!');
+    }
     $naziviDana = $tekst->daysOfTheWeek;
     $akademskeGodine = [];
     $trenutnaGodina = date('Y');
@@ -514,7 +526,10 @@
                 $translations = [];
                 foreach ($languages as $language) {
                     $checkedAttribute = $language === $jezik ? 'checked="checked"' : '';
-                    $translatedText = json_decode(file_get_contents("i18n_$language.json"));
+                    $translatedText = loadI18nFileContent($language);
+                    if ($translatedText === null) {
+                        echo "<script type='text/javascript'>alert('$tekst[languageFileNonExistentOrInvalid]: $language');</script>";
+                    }
                     $translations[$language] = $translatedText->home;
                     echo "<label for='$language' class='language-selection'><img src='https://flagcdn.com/h40/$translatedText->flagCdnCountryCode.png' alt='$language' height='40'/></label>";
                     echo "<input type='radio' name='language' value='$language' id='$language' $checkedAttribute/>";
