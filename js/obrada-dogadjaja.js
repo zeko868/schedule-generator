@@ -161,7 +161,7 @@ function pokusajPopunitiMatricuUdaljenosti(attemptNum) {
     }
     var inputAddressStatuses = $("#forma-pozicija-zgrada > table > tbody input.address").map(function() {return $(this).attr("data-geocode-status")}).toArray();
     if (!inputAddressStatuses.every(function(status) {return status === 'valid' || status === 'pending'})) {
-        alert(`${tekst['locationAddressesNotResolveable']}`);
+        alert(`${tekst['locationAddressesUnresolvable']}`);
         return;
     }
     if (inputAddressStatuses.every(function(status) {return status === 'valid'})) {
@@ -409,25 +409,25 @@ function dodajOgranicenje() {
         <div>
             <label>${tekst['rule']}
                 <select>
-                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >${tekst['maxSatiPredmeta']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >${tekst['maxTrajanjeBoravkaNaFaksu']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >${tekst['minTrajanjeNastave']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >${tekst['maxTrajanjeNastave']}</option>
-                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="0"  value="maxBrojRupa"                             >${tekst['maxBrojRupa']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >${tekst['maxTrajanjeRupe']}</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >${tekst['najranijiPocetak']}</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >${tekst['najkasnijiZavrsetak']}</option>
-                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >${tekst['bezNastaveNaDan']}</option>
-                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >${tekst['minBrojDanaBezNastave']}</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">${tekst['maxBrojUzastopnihDanaDugoTrajanjeNastave']}</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaRaniPocetak"        >${tekst['maxBrojUzastopnihDanaRaniPocetak']}</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >${tekst['maxBrojDanaDugoTrajanjeNastave']}</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >${tekst['maxBrojDanaRaniPocetak']}</option>
-                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >${tekst['dohvatiRaspored']}</option>
-                    <option class="relacije"                            data-PK-components-num="1"                      value="trajanjePutovanjaIzmedjuZgrada"          >${tekst['trajanjePutovanjaIzmedjuZgrada']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >${tekst['definicijaRupe']}</option>
-                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="3"                      value="pohadjanjeNastave"                       >${tekst['pohadjanjeNastave']}</option>
-                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >${tekst['pohadjanjeTermina']}</option>
+                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >${tekst['largestDailyDurationOfSubjectClasses']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >${tekst['largestDurationOfStayAroundFaculty']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >${tekst['smallestDurationOfClasses']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >${tekst['largestDurationOfClasses']}</option>
+                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="0"  value="maxBrojRupa"                             >${tekst['largestAmountOfTimeGaps']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >${tekst['largestAllowedDurationOfTimeGap']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >${tekst['earliestStartTimeOfClasses']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >${tekst['latestEndTimeOfClasses']}</option>
+                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >${tekst['dayWithoutClasses']}</option>
+                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >${tekst['smallestAmountOfDaysWithoutClasses']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">${tekst['largestAmountOfConsecutiveDaysWithLotOfClasses']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaRaniPocetak"        >${tekst['largestAmountOfConsecutiveDaysThatStartPrettyEarly']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >${tekst['largestAmountOfDaysWithLotOfClasses']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >${tekst['largestAmountOfDaysThatStartPrettyEarly']}</option>
+                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >${tekst['onlyMandatoryClasses']}</option>
+                    <option class="relacije"                            data-PK-components-num="1"                      value="trajanjePutovanjaIzmedjuZgrada"          >${tekst['durationOfJourneyBetweenBuildings']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >${tekst['timeGapDefinition']}</option>
+                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="3"                      value="pohadjanjeNastave"                       >${tekst['classAttendanceSelection']}</option>
+                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >${tekst['classTimeSlotSelection']}</option>
                 </select>
             </label>
             <span></span>
