@@ -101,5 +101,6 @@
         "load":"Load",
         "timetablingUnavailableForGivenRequest":"Solving timetabling problem for given request is unavailable. This is most likely due to issues with data generation/preparation",
         "studyProgrammeNotSelected":"Study programme should be selected!"
-    }
+    },
+    "momentJsLanguageCode":"en"
 }
