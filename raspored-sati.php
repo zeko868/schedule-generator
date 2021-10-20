@@ -483,12 +483,16 @@
                 else {
                     die('File with study programmes does not exist!');
                 }
+                $translations = [];
                 foreach ($languages as $language) {
                     $checkedAttribute = $language === $jezik ? 'checked="checked"' : '';
-                    echo "<label for='$language' class='language-selection'><img src='images/language-flags/$language.png' alt='$language'/></label>";
+                    $translatedText = json_decode(file_get_contents("i18n_$language.json"));
+                    $translations[$language] = $translatedText->home;
+                    echo "<label for='$language' class='language-selection'><img src='https://flagcdn.com/h40/$translatedText->flagCdnCountryCode.png' alt='$language' height='40'/></label>";
                     echo "<input type='radio' name='language' value='$language' id='$language' $checkedAttribute/>";
                 }
                 foreach ($languages as $language) {
+                    $prijevodPocetne = $translations[$language];
                     $categories = array();
                     foreach ($sadrzaj['categories'] as $categoryId => $categoryDetails) {
                         $categories[$categoryId] = $categoryDetails['translations'][$language];
@@ -499,7 +503,6 @@
                         $programmeIdsByCategoryIds[$programmeDetails['category']][]= $programmeId;
                         $programmes[$programmeId] = $programmeDetails['translations'][$language];
                     }
-                    $prijevodPocetne = json_decode(file_get_contents("i18n_$language.json"))->home;
             ?>
             <style type="text/css">
                 #<?= $language ?>:checked ~ #<?= $language ?>-form {
