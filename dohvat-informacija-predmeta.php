@@ -48,9 +48,7 @@ if (file_exists('shared-' . $nazivDatotekeRasporeda)) {
     $nazivDatotekeRasporeda = 'shared-' . $nazivDatotekeRasporeda;
 }
 if (file_exists($nazivDatotekeRasporeda)) {
-
     $sadrzaj = file_get_contents($nazivDatotekeRasporeda);
-
     if ($sadrzaj !== false) {
         $termini = json_decode($sadrzaj, true);
         if (file_exists('shared-' . $nazivDatotekePredmeta)) {
