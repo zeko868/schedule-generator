@@ -53,6 +53,7 @@
                 } catch (Error $e) {
                     $odabirDostupanZaRad = false;
                 }
+                $momentJsLanguageCode = $tekst->momentJsLanguageCode;
             }
             if (isset($odabirDostupanZaRad) && $odabirDostupanZaRad) {
         ?>
@@ -63,6 +64,7 @@
             var naziviDana = <?= json_encode($naziviDana) ?>;
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
+            var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
             <?php
                 if (isset($_POST['upisano'])) {
                     $cmdUnosPredmetaTeOgranicenja = '';
@@ -335,13 +337,12 @@
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/fullcalendar.min.js"></script>
         <script type="text/javascript" src="https://rawgit.com/datejs/Datejs/master/build/date-en-US.js"></script>
-        <!-- <script type="text/javascript" src="https://rawgit.com/benscobie/jquery-timesetter/bc82f3b74ad039893ed8d700397e0cd96af21a60/js/jquery.timesetter.js"></script> -->
-        <script type="text/javascript" src="js/jquery.timesetter.js"></script>
+        <script type="text/javascript" src="https://rawgit.com/benscobie/jquery-timesetter/bc82f3b74ad039893ed8d700397e0cd96af21a60/js/jquery.timesetter.js"></script>
         <!-- Async script executes immediately and must be after any DOM elements used in callback. -->
         <?php
-            if ($jezik === 'croatian') {
+            if ($momentJsLanguageCode !== 'en') {
         ?>
-        <script type="text/javascript" src="js/hr.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/lang/<?= $momentJsLanguageCode ?>.js"></script>
         <?php
             }
         ?>
