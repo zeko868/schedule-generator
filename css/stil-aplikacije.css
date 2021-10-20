@@ -97,6 +97,7 @@ input[type="number"] {
 }
 
 #home {
+    margin-top: 2vh;
     text-align: center;
 }
 
