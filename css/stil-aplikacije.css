@@ -154,6 +154,10 @@ input[type="time"] {
     margin: auto;
 }
 
+#legend .color-box {
+    opacity: .75;
+}
+
 .color-name {
     margin-left: 2px;
     margin-right: 10px;
