@@ -276,6 +276,7 @@
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
             var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
+            var fullCalendarDefaultDate = "<?= new DateTime() >= new DateTime($pocetakTrenutnogSemestra) && new DateTime() < (new DateTime($pocetakTrenutnogSemestra))->modify("+154 days") ? date('Y-m-d') : date('Y-m-d', $pocetakTrenutnogSemestra) ?>";
             var kodoviRasporeda = <?php dohvati_sljedeci_zadovoljavajuci_raspored(); ?>;
             <?php
             echo 'var josKombinacija = ' . ($brojKombinacijaRasporeda===$batchSize ? 'true' : 'false') . ';';
