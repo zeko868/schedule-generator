@@ -77,6 +77,7 @@
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
             var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
+            var fullCalendarDefaultDate = "<?= new DateTime() >= new DateTime($pocetakTrenutnogSemestra) && new DateTime() < (new DateTime($pocetakTrenutnogSemestra))->modify("+154 days") ? date('Y-m-d') : date('Y-m-d', $pocetakTrenutnogSemestra) ?>";
             <?php
                 if (isset($_POST['upisano'])) {
                     $cmdUnosPredmetaTeOgranicenja = '';
