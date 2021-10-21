@@ -627,12 +627,9 @@ $(document).ready(function() {
         defaultView: "agendaWeek",
         minTime: "07:00:00",
         maxTime: "21:00:00",
-        defaultDate: new Date().toString("dd-MM-yyyy"),
+        defaultDate: moment(fullCalendarDefaultDate, 'YYYY-MM-DD'),
         eventSources: [kodoviRasporeda[0]]
     });
-    setTimeout(function() {
-        $("button.fc-today-button").trigger("click");
-    }, 100);
 
     constraintsDialog = $( "#constraints-dialog-form" ).dialog({
         autoOpen: false,
