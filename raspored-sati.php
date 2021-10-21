@@ -76,6 +76,7 @@
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
             var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
+            var fullCalendarDefaultDate = "<?= new DateTime() >= new DateTime($pocetakTrenutnogSemestra) && new DateTime() < (new DateTime($pocetakTrenutnogSemestra))->modify("+154 days") ? date('Y-m-d') : date('Y-m-d', $pocetakTrenutnogSemestra) ?>";
             <?php
                 $trajanjeTjedna = 7*24*60*60;
                 $trajanjeDana = 24*60*60;
