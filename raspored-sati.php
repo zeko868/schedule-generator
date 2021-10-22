@@ -93,7 +93,7 @@
                         array('pipe', 'w'),
                         array('pipe', 'w')
                     );
-                    $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+                    $lokacijaPrologSkripte = 'pronalazak-rasporeda.pl';
                     // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
                     if ($jestWindowsLjuska) {
                         $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
