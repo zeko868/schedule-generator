@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.10
 
 RUN apk update && apk upgrade
 
@@ -71,13 +71,35 @@ RUN cp ~/php-src/php.ini-production /etc/php7/cli/php.ini
 RUN echo "extension=pthreads.so" | tee -a /etc/php7/cli/php.ini
 RUN echo "zend_extension=opcache.so" | tee -a /etc/php7/cli/php.ini
 
-RUN apk add jq
-
-RUN for branchName in $(curl https://api.github.com/repos/zeko868/schedule-generator/branches | jq -r '.[].name'); do git clone --branch "$branchName" --depth 1 https://github.com/zeko868/schedule-generator.git /var/www/localhost/htdocs/$branchName; done;
-
-ENV SWIPL_VERSION 8.3.28
+RUN ln -s /etc/php7/bin/php /usr/bin/php
 
 WORKDIR /tmp
+
+RUN apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv
+ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so
+
+RUN apk add jq
+
+
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+RUN php -r "if (hash_file('sha384', 'composer-setup.php') === '906a84df04cea2aa72f40b5f787e49f22d4c2f19492ac310e8cba5b96ac8b64115ac402c8cd292b8a03482574915d1a8') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+RUN php composer-setup.php --filename=composer
+RUN php -r "unlink('composer-setup.php');"
+
+RUN for branchName in $(curl https://api.github.com/repos/zeko868/schedule-generator/branches | jq -r '.[].name'); \
+    do \
+      git clone --branch "$branchName" --depth 1 https://github.com/zeko868/schedule-generator.git /var/www/localhost/htdocs/$branchName; \
+      cd /var/www/localhost/htdocs/$branchName; \
+      rm -rf .git; \
+      if [ -e composer.json ]; \
+      then \
+        /tmp/composer install; \
+      fi \
+    done;
+
+RUN apk del jq
+
+ENV SWIPL_VERSION 8.3.28
 
 ADD https://www.swi-prolog.org/download/devel/src/swipl-${SWIPL_VERSION}.tar.gz .
 
@@ -132,13 +154,15 @@ RUN cp -r /tmp/apache-directory-listing/directory-listing /var/www/localhost/htd
 
 RUN sed 's#{LISTING_DIRECTORY}#directory-listing#g' /tmp/apache-directory-listing/htaccess.txt | sed 's#{LISTING_STYLE}#grid#g' > /var/www/localhost/htdocs/.htaccess
 
-RUN apk del php-pear build-base cmake wget libzip-dev bison autoconf alpine-sdk pkgconf git su-exec cmake readline-dev tar jq libc-utils scanelf musl-utils
+RUN apk del php-pear build-base cmake wget libzip-dev bison autoconf alpine-sdk pkgconf git su-exec cmake readline-dev tar libc-utils scanelf musl-utils
 
 RUN rm -rf /tmp/* /root/php-src
 
+RUN sed -i 's#^ErrorLog.*#ErrorLog /dev/stderr#g' /etc/apache2/httpd.conf
+
 RUN ln -s /etc/php7/bin/php /usr/bin/php
 
-RUN sed -i 's#^ErrorLog.*#ErrorLog /dev/stderr#g' /etc/apache2/httpd.conf
+EXPOSE 80
 
 VOLUME [ "/var/www/localhost/htdocs/current" ]
 
