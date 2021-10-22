@@ -37,7 +37,7 @@ define('PERIOD_SLANJA', getenv('WEBSOCKETS_RECENT_SOLUTIONS_SEND_PERIOD') ?: 0.2
                 $this->posalji_rezultate_klijentu();
             });
             $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
-            $this->process = new Process("swipl -s $lokacijaPrologSkripte");
+            $this->process = new Process("swipl -s \"$lokacijaPrologSkripte\"");
             $this->process->start($this->loop);
             $this->prethodniNedovrseniRaspored = '';
             $this->process->stdout->on('data', function($rezultat) {

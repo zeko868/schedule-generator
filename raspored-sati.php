@@ -148,7 +148,7 @@
                         1 => array('pipe', 'w'),
                         2 => array('pipe', '')
                     );
-                    $lokacijaSkripteDaemona = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.php';
+                    $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
                     $params = [
                         $jezik,
                         '127.0.0.1',
