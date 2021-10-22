@@ -212,7 +212,6 @@ for ($godina=1; $godina<=$godine; $godina++) {
         $endPosition = strrpos($jsCode, '],') + 1;
         $malformedJson = substr($jsCode, $beginPosition, $endPosition-$beginPosition);  // kvazi-JSON ili točnije kôd valjanog JavaScript objekta
         if ($jestWindowsLjuska) {   // problem na windowsima jer shell dozvoljava do 8000 znakova, dok distribucije linuxa dozvoljavaju mnogo više
-            $nameOfThisFile = basename(__FILE__, '.php');
             $tmpJsCodeFilename = 'kod-za-konverziju-js-koda-u-json.js';
             file_put_contents($tmpJsCodeFilename, <<<EOS
             console.log(
