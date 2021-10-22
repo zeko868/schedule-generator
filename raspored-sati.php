@@ -29,7 +29,7 @@
                 array('pipe', 'w'),
                 array('pipe', 'w')
             );
-            $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+            $lokacijaPrologSkripte = 'pronalazak-rasporeda.pl';
             $process = proc_open("swipl -s $lokacijaPrologSkripte", $descriptorspec, $pipes);
             $cmdUnosPredmetaTeOgranicenja = '';
             foreach ($_POST['upisano'] as $sifraPredmeta) {
