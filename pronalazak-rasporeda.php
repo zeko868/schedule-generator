@@ -81,7 +81,7 @@ define('PERIOD_SLANJA', getenv('WEBSOCKETS_RECENT_SOLUTIONS_SEND_PERIOD') ?: 0.2
         public function __construct($prologCommand, $jestWindowsLjuska) {
             $this->jestWindowsLjuska = $jestWindowsLjuska;
             // prije poziva SWI-Prolog interpretera potrebno je osigurati da se putanja njegovog direktorija nalazi u varijabli okoline
-            $lokacijaPrologSkripte = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pronalazak-rasporeda.pl';
+            $lokacijaPrologSkripte = 'pronalazak-rasporeda.pl';
             $descriptorspec = array(
                 array('pipe', 'r'),
                 array('pipe', 'w'),
