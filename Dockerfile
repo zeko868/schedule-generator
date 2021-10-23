@@ -162,7 +162,9 @@ RUN sed -i 's#^ErrorLog.*#ErrorLog /dev/stderr#g' /etc/apache2/httpd.conf
 
 RUN ln -s /etc/php7/bin/php /usr/bin/php
 
-EXPOSE 80
+ENV USE_ZEND_ALLOC 0
+
+EXPOSE 80 28960
 
 VOLUME [ "/var/www/localhost/htdocs/current" ]
 
