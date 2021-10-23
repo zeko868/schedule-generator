@@ -151,7 +151,7 @@
                     $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
                     $params = [
                         $jezik,
-                        '127.0.0.1',
+                        $_SERVER['SERVER_ADDR'],
                         $studij,
                         $akademskaGodina,
                         $semestar,
