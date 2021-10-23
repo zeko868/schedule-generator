@@ -120,7 +120,7 @@
 
                 $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
                 $params = [
-                    '127.0.0.1',
+                    $_SERVER['SERVER_ADDR'],
                     $longRunningAppPort
                 ];
                 $phpScriptArgs = implode(' ', array_map('escapeshellarg', $params));
