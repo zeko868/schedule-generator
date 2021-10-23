@@ -176,12 +176,12 @@ function pokusajPopunitiMatricuUdaljenosti(attemptNum) {
         return;
     }
     if (attemptNum > 5) {
-        alert(`${tekst['pendingGeocodingTimeoutReached']}`);
+        alert(`${tekst['buildingLocationDefinitionDialog']['pendingGeocodingTimeoutReached']}`);
         return;
     }
     var inputAddressStatuses = $("#forma-pozicija-zgrada > table > tbody input.address").map(function() {return $(this).attr("data-geocode-status")}).toArray();
     if (!inputAddressStatuses.every(function(status) {return status === 'valid' || status === 'pending'})) {
-        alert(`${tekst['locationAddressesUnresolvable']}`);
+        alert(`${tekst['buildingLocationDefinitionDialog']['locationAddressesUnresolvable']}`);
         return;
     }
     if (inputAddressStatuses.every(function(status) {return status === 'valid'})) {
@@ -206,7 +206,7 @@ function pokusajPopunitiMatricuUdaljenosti(attemptNum) {
                     for (var element of row.elements) {
                         if (element.status === google.maps.DistanceMatrixElementStatus.ZERO_RESULTS) {
 
-                            alert(`${tekst['noRouteFoundForSelectedTravelMode']}`);
+                            alert(`${tekst['buildingLocationDefinitionDialog']['noRouteFoundForSelectedTravelMode']}`);
                             return;
                         }
                     }
@@ -541,27 +541,27 @@ function dodajOgranicenje() {
     $("#forma-ogranicenja").append(
         dodaniElement = $(`
         <div>
-            <label>${tekst['rule']}
+            <label>${tekst['ruleDefinitionDialog']['rule']}
                 <select>
-                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >${tekst['largestDailyDurationOfSubjectClasses']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >${tekst['largestDurationOfStayAroundFaculty']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >${tekst['smallestDurationOfClasses']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >${tekst['largestDurationOfClasses']}</option>
-                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="0"  value="maxBrojRupa"                             >${tekst['largestAmountOfTimeGaps']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >${tekst['largestAllowedDurationOfTimeGap']}</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >${tekst['earliestStartTimeOfClasses']}</option>
-                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >${tekst['latestEndTimeOfClasses']}</option>
-                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >${tekst['dayWithoutClasses']}</option>
-                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >${tekst['smallestAmountOfDaysWithoutClasses']}</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">${tekst['largestAmountOfConsecutiveDaysWithLotOfClasses']}</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaRaniPocetak"        >${tekst['largestAmountOfConsecutiveDaysThatStartPrettyEarly']}</option>
-                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >${tekst['largestAmountOfDaysWithLotOfClasses']}</option>
-                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >${tekst['largestAmountOfDaysThatStartPrettyEarly']}</option>
-                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >${tekst['onlyMandatoryClasses']}</option>
-                    <option class="relacije"                            data-PK-components-num="1"                      value="trajanjePutovanjaIzmedjuZgrada"          >${tekst['durationOfJourneyBetweenBuildings']}</option>
-                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >${tekst['timeGapDefinition']}</option>
-                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="3"                      value="pohadjanjeNastave"                       >${tekst['classAttendanceSelection']}</option>
-                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >${tekst['classTimeSlotSelection']}</option>
+                    <option class="trajanje predmeti svi"               data-PK-components-num="2"                      value="maxSatiPredmeta"                         >${tekst['ruleDefinitionDialog']['rules']['largestDailyDurationOfSubjectClasses']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeBoravkaNaFaksu"               >${tekst['ruleDefinitionDialog']['rules']['largestDurationOfStayAroundFaculty']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="minTrajanjeNastave"                      >${tekst['ruleDefinitionDialog']['rules']['smallestDurationOfClasses']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeNastave"                      >${tekst['ruleDefinitionDialog']['rules']['largestDurationOfClasses']}</option>
+                    <option class="svi dani kolicina"                   data-PK-components-num="2"  data-min-value="0"  value="maxBrojRupa"                             >${tekst['ruleDefinitionDialog']['rules']['largestAmountOfTimeGaps']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="maxTrajanjeRupe"                         >${tekst['ruleDefinitionDialog']['rules']['largestAllowedDurationOfTimeGap']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najranijiPocetak"                        >${tekst['ruleDefinitionDialog']['rules']['earliestStartTimeOfClasses']}</option>
+                    <option class="svi dani vrijeme"                    data-PK-components-num="2"                      value="najkasnijiZavrsetak"                     >${tekst['ruleDefinitionDialog']['rules']['latestEndTimeOfClasses']}</option>
+                    <option class="dani"                                data-PK-components-num="2"                      value="bezNastaveNaDan"                         >${tekst['ruleDefinitionDialog']['rules']['dayWithoutClasses']}</option>
+                    <option class="kolicina vikendi"                    data-PK-components-num="1"  data-min-value="1"  value="minBrojDanaBezNastave"                   >${tekst['ruleDefinitionDialog']['rules']['smallestAmountOfDaysWithoutClasses']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaDugoTrajanjeNastave">${tekst['ruleDefinitionDialog']['rules']['largestAmountOfConsecutiveDaysWithLotOfClasses']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojUzastopnihDanaRaniPocetak"        >${tekst['ruleDefinitionDialog']['rules']['largestAmountOfConsecutiveDaysThatStartPrettyEarly']}</option>
+                    <option class="kolicina trajanje"                   data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaDugoTrajanjeNastave"          >${tekst['ruleDefinitionDialog']['rules']['largestAmountOfDaysWithLotOfClasses']}</option>
+                    <option class="kolicina vrijeme"                    data-PK-components-num="3"  data-min-value="1"  value="maxBrojDanaRaniPocetak"                  >${tekst['ruleDefinitionDialog']['rules']['largestAmountOfDaysThatStartPrettyEarly']}</option>
+                    <option class="nacin-pretrage"                      data-PK-components-num="1"                      value="dohvatiRaspored"                         >${tekst['ruleDefinitionDialog']['rules']['onlyMandatoryClasses']}</option>
+                    <option class="relacije"                            data-PK-components-num="1"                      value="trajanjePutovanjaIzmedjuZgrada"          >${tekst['ruleDefinitionDialog']['rules']['durationOfJourneyBetweenBuildings']}</option>
+                    <option class="svi dani trajanje"                   data-PK-components-num="2"                      value="definicijaRupe"                          >${tekst['ruleDefinitionDialog']['rules']['timeGapDefinition']}</option>
+                    <option class="svi predmeti vrste 3-pohadjanje"     data-PK-components-num="3"                      value="pohadjanjeNastave"                       >${tekst['ruleDefinitionDialog']['rules']['classAttendanceSelection']}</option>
+                    <option class="predmeti vrste termini 2-pohadjanje" data-PK-components-num="3"                      value="pohadjanjeTermina"                       >${tekst['ruleDefinitionDialog']['rules']['classTimeSlotSelection']}</option>
                 </select>
             </label>
             <span></span>
@@ -599,7 +599,7 @@ function dodajRedakOgranicenja(glavniSelectbox) {
     }
     if (oznacenaOpcija.hasClass("relacije")) {
         vrijednostiOgranicenja.css('display', 'inline-flex');
-        vrijednostiOgranicenja.append(`<label>${tekst['distances']}</label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['distances']}</label>`);
         var matricaUdaljenosti = $('<table id="distance-matrix-table" class="relacije"></table>');
         var sadrzajTablice = $('<tbody></tbody>');
         zaglavljeRedak = $('<tr><th/></tr>');
@@ -621,30 +621,30 @@ function dodajRedakOgranicenja(glavniSelectbox) {
             sadrzajTablice.append(redakSUdaljenostima);
         }
         matricaUdaljenosti.append(sadrzajTablice);
-        matricaUdaljenosti.append($(`<tfoot><tr><td></td><td colspan="${sadrzajTablice.children().length-1}"><button type="button" class="ui-button ui-corner-all ui-widget" onclick="showBuildingLocationDefinitionWindow()">${tekst['autofillDistanceMatrix']}</button></td></tr></tfoot>`));
+        matricaUdaljenosti.append($(`<tfoot><tr><td></td><td colspan="${sadrzajTablice.children().length-1}"><button type="button" class="ui-button ui-corner-all ui-widget" onclick="showBuildingLocationDefinitionWindow()">${tekst['ruleDefinitionDialog']['autofillDistanceMatrix']}</button></td></tr></tfoot>`));
         vrijednostiOgranicenja.append(matricaUdaljenosti);
         matricaUdaljenosti.wrap($(`<label style="margin: 0"></label>`));
-        vrijednostiOgranicenja.append($(`<label for="is-distance-matrix-symmetric">${tekst['isDistanceMatrixSymmetric']}: </label><input type="checkbox" id="is-distance-matrix-symmetric" onchange="toggleDistanceMatrixSymmetricity(this)"/>`));
+        vrijednostiOgranicenja.append($(`<label for="is-distance-matrix-symmetric">${tekst['ruleDefinitionDialog']['isDistanceMatrixSymmetric']}: </label><input type="checkbox" id="is-distance-matrix-symmetric" onchange="toggleDistanceMatrixSymmetricity(this)"/>`));
 
         setTimeout(function() {
             uciniKontroleNaDijagonaliNepromjenjivima();
         }, 200);
     }
     if (oznacenaOpcija.hasClass("predmeti")) {
-        var labela = $(`<label>${tekst['course']}</label>`);
+        var labela = $(`<label>${tekst['ruleDefinitionDialog']['course']}</label>`);
         var predmeti = $('<select class="predmeti"></select>');
         if (oznacenaOpcija.hasClass("svi")) {
-            predmeti.append(`<option value="">${tekst['anyCourse']}</option>`);
+            predmeti.append(`<option value="">${tekst['ruleDefinitionDialog']['anyCourse']}</option>`);
         }
         predmeti.append($("#upisani > option").clone());
         labela.append(predmeti);
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("vrste")) {
-        var labela = $(`<label>${tekst['classType']}</label>`);
+        var labela = $(`<label>${tekst['ruleDefinitionDialog']['classType']}</label>`);
         var vrste = $('<select class="vrste"></select>');
         if (oznacenaOpcija.hasClass("svi")) {
-            vrste.append(`<option value="any">${tekst['anyClassType']}</option>`);
+            vrste.append(`<option value="any">${tekst['ruleDefinitionDialog']['anyClassType']}</option>`);
             Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima['']).forEach(function(vrsta) {
                 vrste.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
             });
@@ -658,7 +658,7 @@ function dodajRedakOgranicenja(glavniSelectbox) {
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("termini")) {
-        var labela = $(`<label>${tekst['timeslot']}</label>`);
+        var labela = $(`<label>${tekst['ruleDefinitionDialog']['timeslot']}</label>`);
         var kontrolaSTerminima = $('<select class="termini"></select>');
         var kontrolePravila = glavniSelectbox.parent().next();
         var terminiNastave = serijaliziraniTerminiPoVrstamaPoPredmetima[$("select.predmeti", kontrolePravila).val()][$("select.vrste", kontrolePravila).val()];
@@ -670,10 +670,10 @@ function dodajRedakOgranicenja(glavniSelectbox) {
         vrijednostiOgranicenja.append(labela);
     }
     if (oznacenaOpcija.hasClass("dani")) {
-        var labela = $(`<label>${tekst['day']}</label>`);
+        var labela = $(`<label>${tekst['ruleDefinitionDialog']['day']}</label>`);
         var dani = $("<select></select>");
         if (oznacenaOpcija.hasClass("svi")) {
-            dani.append(`<option value="">${tekst['anyDay']}</option>`);
+            dani.append(`<option value="">${tekst['ruleDefinitionDialog']['anyDay']}</option>`);
         }
         naziviDana.forEach(function(nazivDana) {
             dani.append(`<option value="${nazivDana}">${nazivDana}</option>`);
@@ -683,32 +683,32 @@ function dodajRedakOgranicenja(glavniSelectbox) {
     }
     if (oznacenaOpcija.hasClass("kolicina")) {
         var donjaGranica = oznacenaOpcija.attr("data-min-value");
-        vrijednostiOgranicenja.append(`<label>${tekst['amount']}<input type="number" value="${donjaGranica}" min="${donjaGranica}" max="7" step="1" required="required"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['amount']}<input type="number" value="${donjaGranica}" min="${donjaGranica}" max="7" step="1" required="required"/></label>`);
     }
     if (oznacenaOpcija.hasClass("trajanje")) {
-        vrijednostiOgranicenja.append(`<label style="display: inline-flex; display: -webkit-inline-flex;">${tekst['duration']}<div class="trajanje"/></label>`);
+        vrijednostiOgranicenja.append(`<label style="display: inline-flex; display: -webkit-inline-flex;">${tekst['ruleDefinitionDialog']['duration']}<div class="trajanje"/></label>`);
     }
     if (oznacenaOpcija.hasClass("vrijeme")) {
-        vrijednostiOgranicenja.append(`<label>${tekst['time']}<input type="time" required="required"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['time']}<input type="time" required="required"/></label>`);
     }
     if (oznacenaOpcija.hasClass("vikendi")) {
-        vrijednostiOgranicenja.append(`<label>${tekst['includeWeekends']}: <input name="ukljuci_vikende" type="checkbox" value="false"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['includeWeekends']}: <input name="ukljuci_vikende" type="checkbox" value="false"/></label>`);
     }
     if (oznacenaOpcija.hasClass("nacin-pretrage")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append(`<label>${tekst['yes']} <input type="radio" name="${jedinstveniIdentifikator}" value="true"/></label>`);
-        vrijednostiOgranicenja.append(`<label>${tekst['no']} <input type="radio" name="${jedinstveniIdentifikator}" value="false" checked="checked"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['yes']} <input type="radio" name="${jedinstveniIdentifikator}" value="true"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['no']} <input type="radio" name="${jedinstveniIdentifikator}" value="false" checked="checked"/></label>`);
     }
     if (oznacenaOpcija.hasClass("3-pohadjanje")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append(`<label>${tekst['mandatory']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
-        vrijednostiOgranicenja.append(`<label>${tekst['optional']} <input type="radio" name="${jedinstveniIdentifikator}" value="mozda" checked="checked"/></label>`);
-        vrijednostiOgranicenja.append(`<label>${tekst['excluded']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['mandatory']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['optional']} <input type="radio" name="${jedinstveniIdentifikator}" value="mozda" checked="checked"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['excluded']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
     }
     if (oznacenaOpcija.hasClass("2-pohadjanje")) {
         var jedinstveniIdentifikator = new Date().getTime();
-        vrijednostiOgranicenja.append(`<label>${tekst['mandatoryClass']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
-        vrijednostiOgranicenja.append(`<label>${tekst['doesNotFit']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['mandatoryClass']} <input type="radio" name="${jedinstveniIdentifikator}" value="da"/></label>`);
+        vrijednostiOgranicenja.append(`<label>${tekst['ruleDefinitionDialog']['doesNotFit']} <input type="radio" name="${jedinstveniIdentifikator}" value="ne" checked="checked"/></label>`);
     }    
     var kontroleSTrajanjem = $(".trajanje", vrijednostiOgranicenja);
     kontroleSTrajanjem.each(function() {
@@ -745,7 +745,7 @@ $(document).ready(function() {
         modal: true,
         closeOnEscape: false,
         buttons: {
-            [`${tekst['addRule']}`]: dodajOgranicenje,  //  dinamičko definiranje ključeva objekta se definira tako da se stavi izraz koji se treba evaluirati unutar uglatih zagrada
+            [`${tekst['ruleDefinitionDialog']['addRule']}`]: dodajOgranicenje,  //  dinamičko definiranje ključeva objekta se definira tako da se stavi izraz koji se treba evaluirati unutar uglatih zagrada
             [`${tekst['close']}`]: ispitajIspravnostOgranicenja
         }
     });
@@ -756,7 +756,7 @@ $(document).ready(function() {
         modal: true,
         closeOnEscape: false,
         buttons: {
-            [`${tekst['autofillDistanceTable']}`]: popuniMatricuUdaljenosti,
+            [`${tekst['buildingLocationDefinitionDialog']['autofillDistanceTable']}`]: popuniMatricuUdaljenosti,
             [`${tekst['close']}`]: ponistiGeografskePodatke
         }
     });
@@ -787,7 +787,7 @@ $(document).ready(function() {
 
     $("#forma-ogranicenja").on( "change", "div > label > select", function() {
         if ($(this).val() === "pohadjanjeTermina" && $("#upisani > option").length === 0) {
-            alert(`${tekst['noCoursesSelectedError']}`);
+            alert(`${tekst['ruleDefinitionDialog']['noCoursesSelectedError']}`);
             $(this).val($("option:first", $(this)).val());
         }
         else {
@@ -858,7 +858,7 @@ $(document).ready(function() {
                 });
             }
             else {
-                kontrolaSVrstamaNastave.append(`<option value="any">${tekst['anyClassType']}</option>`);
+                kontrolaSVrstamaNastave.append(`<option value="any">${tekst['ruleDefinitionDialog']['anyClassType']}</option>`);
                 Object.keys(serijaliziraniTerminiPoVrstamaPoPredmetima[$(this).val()]).forEach(function(vrsta) {
                     kontrolaSVrstamaNastave.append(`<option value="${vrsta}">${naziviVrsta[vrsta]}</option>`);
                 });
@@ -938,7 +938,7 @@ $(document).ready(function() {
                     listaRedovaIstoimenihPravilaSVrijednostima.forEach(function(elem){
                         var nazivDanaPravila = elem[1][0];
                         if ($.inArray(nazivDanaPravila, daniSDefiniranimRupama) === -1) {
-                            alert(`${tekst['gapDefinitionRequiredError']}`);
+                            alert(`${tekst['ruleDefinitionDialog']['gapDefinitionRequiredError']}`);
                             privremenoOsvijetliKontrolu(elem[0]);
                             ispravno = false;
                             return false;
@@ -968,7 +968,7 @@ $(document).ready(function() {
 
 function showBuildingLocationDefinitionWindow() {
     if (googleMapsApiKey === "") {
-        alert(`${tekst['apiKeyRequiredForDistanceMatrixAutofill']}`);
+        alert(`${tekst['ruleDefinitionDialog']['apiKeyRequiredForDistanceMatrixAutofill']}`);
         return;
     }
     var distanceMatrices = $("#forma-ogranicenja > div > label:first-child > select").filter(function() {return $(this).val() === "trajanjePutovanjaIzmedjuZgrada"});
