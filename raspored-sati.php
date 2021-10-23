@@ -71,7 +71,7 @@
             var daemonPort = <?= $longRunningAppPort ?>;
             var naziviDana = <?= json_encode($naziviDana) ?>;
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
-            var tekst = <?= json_encode($tekst->other) ?>;
+            var tekst = <?= json_encode($tekst) ?>;
             var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
             var fullCalendarDefaultDate = "<?= new DateTime() >= new DateTime($pocetakTrenutnogSemestra) && new DateTime() < (new DateTime($pocetakTrenutnogSemestra))->modify("+154 days") ? date('Y-m-d') : date('Y-m-d', $pocetakTrenutnogSemestra) ?>";
             <?php
@@ -190,27 +190,27 @@
 
         <div id="constraints-dialog-form" title="<?= $tekst->constraints ?>" style="display: none;">
             <form id="forma-ogranicenja"></form>
-            <span id="no-constraints-hint"><?= $tekst->noConstraintsHint ?></span>
+            <span id="no-constraints-hint"><?= $tekst->ruleDefinitionDialog->noConstraintsHint ?></span>
         </div>
 
-        <div id="geo-mapping-dialog-form" title="<?= $tekst->other->buildingLocationDefinition ?>" style="display: none;">
+        <div id="geo-mapping-dialog-form" title="<?= $tekst->buildingLocationDefinitionDialog->dialogTitle ?>" style="display: none;">
             <div id="map-canvas"></div>
             <div id="floating-panel">
                 <form id="forma-pozicija-zgrada">
-                    <label for="travel-mode"><?= $tekst->other->travelMode ?></label>
+                    <label for="travel-mode"><?= $tekst->buildingLocationDefinitionDialog->travelMode ?></label>
                     <select id="travel-mode">
-                        <option value="DRIVING"><?= $tekst->other->driving ?></option>
-                        <option value="WALKING"><?= $tekst->other->walking ?></option>
-                        <option value="BICYCLING"><?= $tekst->other->bicycling ?></option>
-                        <option value="TRANSIT"><?= $tekst->other->transit ?></option>
-                        <option value="TWO_WHEELER"><?= $tekst->other->twoWheeler ?></option>
+                        <option value="DRIVING"><?= $tekst->buildingLocationDefinitionDialog->travelModes->driving ?></option>
+                        <option value="WALKING"><?= $tekst->buildingLocationDefinitionDialog->travelModes->walking ?></option>
+                        <option value="BICYCLING"><?= $tekst->buildingLocationDefinitionDialog->travelModes->bicycling ?></option>
+                        <option value="TRANSIT"><?= $tekst->buildingLocationDefinitionDialog->travelModes->transit ?></option>
+                        <option value="TWO_WHEELER"><?= $tekst->buildingLocationDefinitionDialog->travelModes->twoWheeler ?></option>
                     </select>
                     <table>
-                        <caption><?= $tekst->other->buildingLocations ?></caption>
+                        <caption><?= $tekst->buildingLocationDefinitionDialog->buildingLocations ?></caption>
                         <thead>
                             <tr>
-                                <th><?= $tekst->other->locationName ?></th>
-                                <th><?= $tekst->other->locationAddress ?></th>
+                                <th><?= $tekst->buildingLocationDefinitionDialog->locationName ?></th>
+                                <th><?= $tekst->buildingLocationDefinitionDialog->locationAddress ?></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -263,7 +263,7 @@
                     $checkedAttribute = $language === $jezik ? 'checked="checked"' : '';
                     $translatedText = loadI18nFileContent($language);
                     if ($translatedText === null) {
-                        echo "<script type='text/javascript'>alert('$tekst[languageFileNonExistentOrInvalid]: $language');</script>";
+                        echo "<script type='text/javascript'>alert('{$tekst->home->languageFileNonExistentOrInvalid}: $language');</script>";
                     }
                     $translations[$language] = $translatedText->home;
                     echo "<label for='$language' class='language-selection'><img src='https://flagcdn.com/h40/$translatedText->flagCdnCountryCode.png' alt='$language' height='40'/></label>";
