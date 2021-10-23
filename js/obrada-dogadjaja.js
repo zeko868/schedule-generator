@@ -280,9 +280,16 @@ $("#makni-sve").click(function() {
     });
 });
 
-$("#odabir-predmeta").submit(function() {
-    $("#upisani option").prop("selected", true);
-    $("#dostupni option").prop("selected", true);
+$("#odabir-predmeta").submit(function(e) {
+    e.preventDefault();
+    var upisaniPredmeti = $("#upisani option").map(function() {return $(this).val()}).toArray();
+    if (upisaniPredmeti.length === 0) {
+        $("#error-message").html(tekst['noEnrolledCoursesError']);
+        $("#error-message").show();
+        e.stopPropagation();
+        return;
+    }
+    $("#error-message").hide();
     $("#ogranicenja").empty();
     $("#serijalizirani-termini-po-vrstama-po-predmetima").val(JSON.stringify(serijaliziraniTerminiPoVrstamaPoPredmetima));
     $("#zgrade").val(JSON.stringify(zgrade));
@@ -365,7 +372,49 @@ $("#odabir-predmeta").submit(function() {
         $(this).prop("selected", true);
     });
 
-    $("#serijalizirana-forma-ogranicenja").val($("#forma-ogranicenja").html());
+    var $theForm = $(this);
+
+    var conn = new WebSocket('ws://' + window.location.hostname + ':' + daemonPort);
+
+    conn.onopen = function(e) {
+        var dataToSend = $theForm.serialize();
+        var upisanoKey = "upisano" + encodeURIComponent("[]");
+        kodoviRasporeda = [];
+        dataToSend += "&" + upisaniPredmeti.map(function(elem) {return upisanoKey + "=" + encodeURIComponent(elem)}).join("&");
+        dataToSend += "&" + window.location.search.substring(1);
+        conn.send(dataToSend);
+    }
+
+    conn.onmessage = function(e) {
+        $("#pageloader").css("visibility", "hidden");
+        $("#solution-navigation").show();
+        $("#possible-incompleteness-note").show();
+
+        var prviPodaci = kodoviRasporeda.length === 0;
+        kodoviRasporeda.push(...JSON.parse(e.data));
+        $("#ukupno-kombinacija").html(kodoviRasporeda.length);
+        if (prviPodaci) {
+            $("#trenutna-kombinacija").html(1);
+            ucitajRaspored(1);
+        }
+    };
+
+    conn.onclose = function(e) {
+        conn.close();
+        if (kodoviRasporeda.length) {
+            $("#possible-incompleteness-note").show();
+            $("#possible-incompleteness-note").html(tekst["endReached"]);
+            setTimeout(function() {
+                $("#possible-incompleteness-note").hide();
+            }, 5000);
+        }
+        else {
+            $("#error-message").html(tekst["noResultsError"]);
+            $("#error-message").show();
+            $("#pageloader").css("visibility", "hidden");
+            $("#solution-navigation").hide();
+        }
+    };
 });
 
 $("#prvi").click(function() {
@@ -585,33 +634,6 @@ function dodajRedakOgranicenja(glavniSelectbox) {
 $(document).ready(function() {
     var constraintsDialog;
 
-    if (daemonPort) {
-        var conn = new WebSocket('ws://' + window.location.hostname + ':' + daemonPort);
-
-        conn.onmessage = function(e) {
-            var prviPodaci = kodoviRasporeda.length === 0;
-            kodoviRasporeda.push(...JSON.parse(e.data));
-            $("#ukupno-kombinacija").html(kodoviRasporeda.length);
-            if (prviPodaci) {
-                $("#trenutna-kombinacija").html(1);
-                ucitajRaspored(1);
-            }
-        };
-
-        conn.onclose = function(e) {
-            conn.close();
-            if (kodoviRasporeda.length) {
-                $("#possible-incompleteness-note").html(tekst["endReached"]);
-                setInterval(function() {
-                    $("#possible-incompleteness-note").hide();
-                }, 5000);
-            }
-            else {
-                $(".middle > nav").html(`<span class="error">${tekst["noResultsError"]}</span>`);
-            }
-        };
-    }
-
     $("#calendar").fullCalendar({
         theme: false,
         height: "auto",
@@ -686,51 +708,6 @@ $(document).ready(function() {
         else {
             dodajRedakOgranicenja($(this));
         }
-    });
-
-    $("#forma-ogranicenja > div > label > select").each(function(index) {
-        $(this).val(predikati[index]);
-    });
-
-    var zadnjiNameRadioIliCheckboxElementa = null;
-    var pozicijaTrenutneVrijednosti = 0;
-    $("#forma-ogranicenja > div > span > label > *").each(function() {
-        if ($(this).hasClass("relacije")) {
-            for (var i=0; i < zgrade.length*zgrade.length; i++) {
-                var redoviMatrice = $("tbody tr", $(this));
-                var indeksRetka = zgrade.indexOf(vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti++]);
-                var indeksStupca = zgrade.indexOf(vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti++]);
-                var celija = $("td", $(redoviMatrice[indeksRetka+1]))[indeksStupca];
-                var kontrolaZaUnosUdaljenosti = $("div.trajanje", $(celija)).timesetter(timesetterOptions);
-                var komponenteTrajanja = vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti++].split(":");
-                kontrolaZaUnosUdaljenosti.setHour(komponenteTrajanja[0]).setMinute(komponenteTrajanja[1]);
-            }
-            return true;
-        }
-        else if ($(this).hasClass("trajanje")) {
-            var komponenteTrajanja = vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti].split(":");
-            $(this).timesetter(timesetterOptions).setHour(komponenteTrajanja[0]).setMinute(komponenteTrajanja[1]);
-        }
-        else {
-            switch ($(this).prop("type")) {
-                case "radio":
-                case "checkbox":
-                    var trenutniNameRadioIliCheckboxElementa = $(this).prop("name");
-                    if (trenutniNameRadioIliCheckboxElementa === zadnjiNameRadioIliCheckboxElementa) {
-                        pozicijaTrenutneVrijednosti--;
-                    }
-                    else {
-                        zadnjiNameRadioIliCheckboxElementa = trenutniNameRadioIliCheckboxElementa;
-                    }
-                    if ($(this).val() === vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti]) {
-                        $(this).prop("checked", true);
-                    }
-                    break;
-                default:
-                    $(this).val(vrijednostiOstalihKontrola[pozicijaTrenutneVrijednosti]);
-            }
-        }
-        pozicijaTrenutneVrijednosti++;
     });
 
     $("#forma-ogranicenja").on( "change", "span select.predmeti", function() {

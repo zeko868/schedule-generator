@@ -26,20 +26,20 @@
     width: 2em;
 } 
 .middle > * {
-    margin: 0 auto !important;
-    display: block !important;
+    margin: 0 auto;
+    display: block;
 }
 nav {
     text-align: center;
-    margin-top: 10px !important;
+    margin-top: 10px;
 }
 .middle > button[type="submit"] {
-    margin-bottom: 10px !important;
+    margin-bottom: 10px;
 }
 span.error {
     text-align: center;
     color: red;
-    margin-top: 10px !important;
+    margin-top: 10px;
 }
 input[data-geocode-status="error"] {
     background-color: red;
@@ -51,7 +51,7 @@ input[data-geocode-status="warning"] {
     padding: .3em;
 }
 #tipka-ogranicenja {
-    margin: 10px auto !important;
+    margin: 10px auto;
 }
 .middle #tipka-ogranicenja, .middle button[type="submit"] {
     width: 80%;

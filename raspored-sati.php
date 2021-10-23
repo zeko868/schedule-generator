@@ -1,12 +1,5 @@
 <?php
-    function loadI18nFileContent($languageName) {
-        $nazivDatoteke = "data/i18n_$languageName.json";
-        if (file_exists('shared-' . $nazivDatoteke)) {
-            $nazivDatoteke = 'shared-' . $nazivDatoteke;
-        }
-        $result = json_decode(file_get_contents($nazivDatoteke));
-        return $result;
-    }
+    require_once 'pomocne-funkcije.php';
 
     date_default_timezone_set('UTC');   // ne koristi ljetno vrijeme zbog čega nema komplikacija zbog otežane razlike proteklog vremena između 2 datuma kada je jedan u ljetnom razdoblju, a drugi u zimskom
     session_start();
@@ -38,6 +31,8 @@
         $krajAkademskeGodine = $pocetakAkademskeGodine + 1;
         $akademskeGodine[]= "$pocetakAkademskeGodine/$krajAkademskeGodine";
     }
+
+    $longRunningAppPort = getenv('WEBSOCKETS_LONG_RUNNING_APP_PORT') ?: 28960;
 ?>
 <!DOCTYPE html>
 <html>
@@ -73,139 +68,41 @@
             var googleMapsApiKey = "<?= getenv('GOOGLE_MAPS_API_KEY') ?>";
             var initialMapCenterGeocoordinates = "<?= getenv('INITIAL_MAP_CENTER_GEOCOORDINATES') ?: '45,16' ?>";
             var initialMapZoomLevel = <?= getenv('INITIAL_MAP_ZOOM_LEVEL') ?: 7 ?>;
+            var daemonPort = <?= $longRunningAppPort ?>;
             var naziviDana = <?= json_encode($naziviDana) ?>;
             var naziviVrsta = <?= json_encode($tekst->typeOfClasses) ?>;
             var tekst = <?= json_encode($tekst->other) ?>;
             var momentJsLanguageCode = "<?= $momentJsLanguageCode ?>";
             var fullCalendarDefaultDate = "<?= new DateTime() >= new DateTime($pocetakTrenutnogSemestra) && new DateTime() < (new DateTime($pocetakTrenutnogSemestra))->modify("+154 days") ? date('Y-m-d') : date('Y-m-d', $pocetakTrenutnogSemestra) ?>";
             <?php
-                if (isset($_POST['upisano'])) {
-                    $cmdUnosPredmetaTeOgranicenja = '';
-                    foreach ($_POST['upisano'] as $sifraPredmeta) {
-                        $cmdUnosPredmetaTeOgranicenja .= "asserta(upisano('$sifraPredmeta')),";
-                    }
-                    $cmdTrazi = 'dohvatiRaspored(\'false\')';
-                    if (isset($_POST['ogranicenja'])) {
-                        $cmdZadnjaOgranicenja = '';
-                        $prioritetniRedSPravilimaPohadjanjaNastave = [[],[],[],[]];
-                        $odabraniTermini = [];
-                        $zabranjeniTermini = [];
-                        foreach ($_POST['ogranicenja'] as $ogranicenje) {
-                            if (preg_match('/^dohvatiRaspored\(\'(true|false)\'\)$/', $ogranicenje)) {
-                                $cmdTrazi = $ogranicenje;
-                            }
-                            else if (preg_match('/^pohadjanjeNastave\((\d+|\'\'),\'(any|[^\']*)\'/', $ogranicenje, $matches)) {
-                                $biloKojiPredmet = $matches[1] === "''";
-                                $biloKojaVrsta = $matches[2] === 'any';
-                                if ($biloKojiPredmet && $biloKojaVrsta) {
-                                    $prioritet = 0;
-                                }
-                                else if ($biloKojaVrsta) {
-                                    $prioritet = 1;
-                                }
-                                else if ($biloKojiPredmet) {
-                                    $prioritet = 2;
-                                }
-                                else {
-                                    $prioritet = 3;
-                                }
-                                $prioritetniRedSPravilimaPohadjanjaNastave[$prioritet][] = "ignore($ogranicenje)";
-                            }
-                            else {
-                                $ogranicenje = preg_replace("/,''|'',/", '', $ogranicenje, -1, $brojZamjena);
-                                if ($brojZamjena === 0) {
-                                    $cmdUnosPredmetaTeOgranicenja .= "(clause($ogranicenje, _) -> ignore($ogranicenje) ; asserta($ogranicenje)),";
-                                }
-                                else {
-                                    $cmdZadnjaOgranicenja .= "ignore($ogranicenje),";
-                                }
-                            }
-                        }
-                        for ($i=0; $i<4; $i++) {
-                            if (!empty($prioritetniRedSPravilimaPohadjanjaNastave[$i])) {
-                                $cmdZadnjaOgranicenja .= implode(',', $prioritetniRedSPravilimaPohadjanjaNastave[$i]) . ',';
-                            }
-                        }
-                        $cmdUnosPredmetaTeOgranicenja .= $cmdZadnjaOgranicenja;
-                    }
-                    $cmdTrazi = "ignore($cmdTrazi)";
-                    $cmdUnosDana = '';
-                    for ($i=1; $i<=5; $i++) {
-                        $nazivDana = $naziviDana[$i-1];
-                        $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', true)),";
-                    }
-                    for ($i=6; $i<=7; $i++) {
-                        $nazivDana = $naziviDana[$i-1];
-                        $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', false)),";
-                    }
-                    $putanja = dirname($_SERVER['PHP_SELF']);
-                    $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-                    $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), $cmdTrazi, halt().";    // na Windowsima radi ako naredba završava s "false. halt().", no na Linuxu proces Prolog interpretera nikada ne završava ako se proslijedi više naredbi - svrha jest kako bi kraj rezultata izvođenja uvijek završio "neuspješno" te bi se znalo kad više ne treba pozvati fread funkciju koja je blokirajuća
-                    if ($jestWindowsLjuska) {
-                        $cmd = iconv('utf-8', 'windows-1250', $cmd);
-                    }
-                    $descriptorspec = array(
-                        1 => array('pipe', 'w'),
-                        2 => array('pipe', '')
-                    );
-                    $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
-                    $params = [
-                        $jezik,
-                        '127.0.0.1',
-                        $studij,
-                        $akademskaGodina,
-                        $semestar,
-                        $cmd
-                    ];
-                    $phpScriptArgs = implode(' ', array_map('escapeshellarg', $params));
-                    if ($jestWindowsLjuska) {
-                        $process = proc_open("start /B php -d extension=pthreads -f $lokacijaSkripteDaemona -- $phpScriptArgs", $descriptorspec, $pipes);
-                    }
-                    else {
-                        $process = proc_open("nohup php -d extension=pthreads -f $lokacijaSkripteDaemona -- $phpScriptArgs &", $descriptorspec, $pipes);
-                    }
-                    if (is_resource($process)) {
-                        $daemonPort = stream_get_contents($pipes[1]);
-                        //$daemonPort = fread($pipes[1], 5);
-                    }
-                    echo 'var kodoviRasporeda = [];';
+                $terminiPoVrstamaPoPredmetima = [];
+                $zgrade = [];
+                foreach ($termini as $stavka) {
+                    $predmet = $stavka['subject'];
+                    $vrsta = $stavka['type'];
+                    $termin = $stavka['timeslot'];
+                    $nazivDana = $naziviDana[$termin['weekday']-1];
+                    $skraceniNazivDana = substr($nazivDana, 0, 3);
+                    $vrijemePocetka = $termin['start'];
+                    $vrijemePocetkaSaZarezom = str_replace(':', ',', $vrijemePocetka);
+                    $vrijemeZavrsetka = $termin['end'];
+                    $vrijemeZavrsetkaSaZarezom = str_replace(':', ',', $vrijemeZavrsetka);
+                    $lokacija = $stavka['location'];
+                    $zgrada = $lokacija['building'];
+                    $prostorija = $lokacija['room'];
+                    $terminiPoVrstamaPoPredmetima[$predmet][$vrsta][] = ["terminILokacija(termin('$nazivDana',vrijeme($vrijemePocetkaSaZarezom),vrijeme($vrijemeZavrsetkaSaZarezom)),lokacija('$zgrada','$prostorija'))" => "$skraceniNazivDana $vrijemePocetka-$vrijemeZavrsetka, $zgrada > $prostorija"];
+                    $zgrade[] = $zgrada;
                 }
-                else {
-                    $terminiPoVrstamaPoPredmetima = [];
-                    $zgrade = [];
-                    foreach ($termini as $stavka) {
-                        $predmet = $stavka['subject'];
-                        $vrsta = $stavka['type'];
-                        $termin = $stavka['timeslot'];
-                        $nazivDana = $naziviDana[$termin['weekday']-1];
-                        $skraceniNazivDana = substr($nazivDana, 0, 3);
-                        $vrijemePocetka = $termin['start'];
-                        $vrijemePocetkaSaZarezom = str_replace(':', ',', $vrijemePocetka);
-                        $vrijemeZavrsetka = $termin['end'];
-                        $vrijemeZavrsetkaSaZarezom = str_replace(':', ',', $vrijemeZavrsetka);
-                        $lokacija = $stavka['location'];
-                        $zgrada = $lokacija['building'];
-                        $prostorija = $lokacija['room'];
-                        $terminiPoVrstamaPoPredmetima[$predmet][$vrsta][] = ["terminILokacija(termin('$nazivDana',vrijeme($vrijemePocetkaSaZarezom),vrijeme($vrijemeZavrsetkaSaZarezom)),lokacija('$zgrada','$prostorija'))" => "$skraceniNazivDana $vrijemePocetka-$vrijemeZavrsetka, $zgrada > $prostorija"];
-                        $zgrade[] = $zgrada;
-                    }
-                    $zgrade = array_values(array_unique($zgrade));
-                    sort($zgrade);
-                    $serijaliziraneZgrade = json_encode($zgrade, JSON_UNESCAPED_UNICODE);
-                    foreach (array_keys($boje) as $vrsta) {
-                        $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
-                    }
-                    $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
-                    $rasporedi = [&$termini];
-                    require 'dohvati-rasporede-za-ispis.php';
-                    echo 'var kodoviRasporeda = ' . dohvati_rasporede_za_ispis($rasporedi) . ';';
+                $zgrade = array_values(array_unique($zgrade));
+                sort($zgrade);
+                $serijaliziraneZgrade = json_encode($zgrade, JSON_UNESCAPED_UNICODE);
+                foreach (array_keys($boje) as $vrsta) {
+                    $terminiPoVrstamaPoPredmetima[''][$vrsta] = [];
                 }
-                if (!empty($daemonPort)) {
-                    echo 'var daemonPort =' . $daemonPort . ';';
-                }
-                else {
-                    echo 'var daemonPort = false;';
-                }
+                $serijaliziraniTerminiPoVrstamaPoPredmetima = json_encode($terminiPoVrstamaPoPredmetima, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT);
+                $rasporedi = [&$termini];
+                require 'dohvati-rasporede-za-ispis.php';
+                echo 'var kodoviRasporeda = ' . dohvati_rasporede_za_ispis($rasporedi) . ';';
                 if (!isset($serijaliziraniTerminiPoVrstamaPoPredmetima)) {
                     $serijaliziraniTerminiPoVrstamaPoPredmetima = $_POST['serijalizirani-termini-po-vrstama-po-predmetima'];
                 }
@@ -220,25 +117,30 @@
                     echo 'var lokacijeZgrada = [];';
                 }
                 echo "var zgrade = $serijaliziraneZgrade;";
+
+                $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
+                $params = [
+                    '127.0.0.1',
+                    $longRunningAppPort
+                ];
+                $phpScriptArgs = implode(' ', array_map('escapeshellarg', $params));
+                if ($jestWindowsLjuska) {
+                    exec("start /B php -d extension=pthreads -f $lokacijaSkripteDaemona -- $phpScriptArgs");
+                }
+                else {
+                    exec("nohup php -d extension=pthreads -f $lokacijaSkripteDaemona -- $phpScriptArgs &");
+                }
             ?>
         </script>
 
-        <form action="<?= "$_SERVER[PHP_SELF]?study_id=$studij&semester=$semestar&academic_year=$akademskaGodina"?>" method="POST" id="odabir-predmeta">
+        <form id="odabir-predmeta">
             <div class="left">
                 <label for="dostupni"><?= $tekst->availableCourses ?></label>
                 <br/>
-                <select size="12" multiple="multiple" name="dostupno[]" id="dostupni">
+                <select size="12" multiple="multiple" id="dostupni">
                     <?php
-                        if (isset($_POST['dostupno'])) {
-                            foreach ($_POST['dostupno'] as $sifraPredmeta) {
-                                $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                                echo "<option value=\"$sifraPredmeta\">$naziviPredmeta[$jezik]</option>";
-                            }
-                        }
-                        else {
-                            foreach ($sifrePredmeta as $sifraPredmeta => $naziviPredmeta) {
-                                echo "<option value=\"$sifraPredmeta\">$naziviPredmeta[$jezik]</option>";
-                            }
+                        foreach ($sifrePredmeta as $sifraPredmeta => $naziviPredmeta) {
+                            echo "<option value=\"$sifraPredmeta\">$naziviPredmeta[$jezik]</option>";
                         }
                     ?>
                 </select>
@@ -252,11 +154,7 @@
                 <button type="button" id="dodaj" class="ui-button ui-corner-all ui-widget">&gt;</button>
                 <br/>
                 <button type="button" id="tipka-ogranicenja" class="ui-button ui-corner-all ui-widget"><?= $tekst->constraints ?></button>
-                <br/>
-                <?php
-                    if (isset($_POST['upisano'])) {
-                ?>
-                <nav>
+                <nav id="solution-navigation" style="display: none;">
                     <button type="button" id="prvi" class="ui-button ui-corner-all ui-widget">&lt;&lt;</button>
                     <button type="button" id="prethodni" class="ui-button ui-corner-all ui-widget">&lt;</button>
                     <span id="trenutna-kombinacija">0</span> <?= $tekst->outOf ?> <span id="ukupno-kombinacija">0</span></span>
@@ -265,31 +163,14 @@
                     <br/>
                     <span id="possible-incompleteness-note"><?= $tekst->soFar ?></span>
                 </nav>
-                <?php
-                    }
-                    else {
-                        if (isset($_POST['dostupno'])) {
-                            echo "<span class=\"error\">$tekst->noEnrolledCoursesError</span>";
-                        }
-                    }
-                ?>
+                <span id="error-message" class="error" style="display: none;"></span>
             </div>
             <div class="right">
                 <label for="upisani"><?= $tekst->enrolledCourses ?></label>
                 <br/>
-                <select size="12" multiple="multiple" name="upisano[]" id="upisani">
-                    <?php
-                    if (isset($_POST['upisano'])) {
-                        foreach ($_POST['upisano'] as $sifraPredmeta) {
-                            $naziviPredmeta = $sifrePredmeta[$sifraPredmeta];
-                            echo "<option value=\"$sifraPredmeta\">$naziviPredmeta[$jezik]</option>";
-                        }
-                    }
-                    ?>
-                </select>
+                <select size="12" multiple="multiple" id="upisani"></select>
             </div>
             <select name="ogranicenja[]" id="ogranicenja" multiple="multiple"></select>
-            <input type="hidden" name="serijalizirana-forma-ogranicenja" id="serijalizirana-forma-ogranicenja"/>
             <input type="hidden" name="serijalizirani-termini-po-vrstama-po-predmetima" id="serijalizirani-termini-po-vrstama-po-predmetima"/>
             <input type="hidden" name="zgrade" id="zgrade"/>
             <input type="hidden" name="lokacije-zgrada" id="lokacije-zgrada"/>
@@ -308,11 +189,7 @@
         </table>
 
         <div id="constraints-dialog-form" title="<?= $tekst->constraints ?>" style="display: none;">
-            <form id="forma-ogranicenja"><?php      // sadržaj form HTML elementa je ovako formatiran zato što bi se razdvajanjem <?php oznake u novi redak učinilo CSS selektor '#forma-ogranicenja:empty' neprimijenjivim čak i kada spomenuti HTML element ne bi sadržavao elemente-djecu (razlog tome jest što bi ipak sadržavao whitespaceve, a tek od CSS4 bi se trebali stilovi sa selektorom koji sadrži :empty pseudoklasom primijenjivati na takve elemente)
-                if (isset($_POST['serijalizirana-forma-ogranicenja'])) {
-                    echo $_POST['serijalizirana-forma-ogranicenja'];
-                }
-                ?></form>
+            <form id="forma-ogranicenja"></form>
             <span id="no-constraints-hint"><?= $tekst->noConstraintsHint ?></span>
         </div>
 
@@ -353,67 +230,12 @@
         <script type="text/javascript" src="https://rawgit.com/benscobie/jquery-timesetter/bc82f3b74ad039893ed8d700397e0cd96af21a60/js/jquery.timesetter.js"></script>
         <!-- Async script executes immediately and must be after any DOM elements used in callback. -->
         <?php
-            if ($momentJsLanguageCode !== 'en') {
+                if ($momentJsLanguageCode !== 'en') {
         ?>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.3.2/lang/<?= $momentJsLanguageCode ?>.js"></script>
         <?php
-            }
-        ?>
-        <script type="text/javascript">
-            <?php
-                if (isset($_POST['ogranicenja'])) {
-                    $predikati = [];
-                    $vrijednostiOstalihKontrola = [];
-                    foreach ($_POST['ogranicenja'] as $ogranicenje) {
-                        //if (preg_match('/^(?<predikat>.*?)\((?:(?:(?:vrijeme|trajanje)\((?<vrijemeIliTrajanje>.*?)\)|(?<predmetIliDan>\'.*?\')|(?<number>\d+)|(?<boolean>true|false))(?:\,|\)))*$/', $ogranicenje, $matches)) {   // ako bi koje ograničenje imalo više vremena/trajanja, tad bi trebalo doraditi ovaj dio
-                        if (preg_match('/^(\S+?)\((?:(?:(?:vrijeme|trajanje)\((?<vrijeme>.*?)\)|(\'(?:p|s|lv|av|v|any)\')|(\'(?:true|false|da|ne|mozda)\')|(\'(?:\\\'|[^\'])*?\')(?:,(\'(?:\\\'|[^\'])*?\'))?|(\d+)|((?<slozeni_term>[^(]+\(.*\)(?=[^)]*\)))))(?:\,|\)))*$/', $ogranicenje, $matches, PREG_OFFSET_CAPTURE)) {
-                            $brojIndeksiranihElemenata = 0;
-                            foreach ($matches as $k => $v) {
-                                if (is_integer($k)) {
-                                    $brojIndeksiranihElemenata++;
-                                }
-                            }
-                            $brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata = 2;   // jedan predstavlja rezultat cjelokupnog regexa, a drugi predstavlja naziv predikata
-                            $brojIndeksiranihMatchovaGrupaArgumenataPredikata = $brojIndeksiranihElemenata - $brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata;
-                            $nazivTrenutnogPredikata = $matches[1][0];
-                            if (!isset($nazivPrethodnogPredikata) || !($nazivTrenutnogPredikata === 'trajanjePutovanjaIzmedjuZgrada' && $nazivPrethodnogPredikata === $nazivTrenutnogPredikata)) {
-                                $predikati[] = '"' . $nazivTrenutnogPredikata . '"';
-                            }
-                            $nazivPrethodnogPredikata = $nazivTrenutnogPredikata;
-                            $proslaPozicijaPronadjenog = -1;
-                            for ($iteracija=0; $iteracija < $brojIndeksiranihMatchovaGrupaArgumenataPredikata; $iteracija++) {
-                                $novaPozicijaPronadjenog = null;
-                                $indeksPronadjenog = null;
-                                for ($i=$brojIndeksiranihMatchovaGrupaPrijePocetkaArgumenata; $i<$brojIndeksiranihElemenata; $i++) {
-                                    $trenutnaPozicija = $matches[$i][1];
-                                    if ($trenutnaPozicija !== -1 && ($novaPozicijaPronadjenog === null || $trenutnaPozicija < $novaPozicijaPronadjenog) && $trenutnaPozicija > $proslaPozicijaPronadjenog) {
-                                        $novaPozicijaPronadjenog = $trenutnaPozicija;
-                                        $indeksPronadjenog = $i;
-                                    }
-                                }
-                                if ($indeksPronadjenog !== null) {
-                                    $pronadjenaVrijednost = $matches[$indeksPronadjenog][0];
-                                    if (isset($matches['vrijeme']) && $matches['vrijeme'][1] === $novaPozicijaPronadjenog) {
-                                        $pronadjenaVrijednost = '"' . str_replace(',', ':', $pronadjenaVrijednost) . '"';
-                                    }
-                                    else if (isset($matches['slozeni_term']) && $matches['slozeni_term'][1] === $novaPozicijaPronadjenog) {
-                                        $pronadjenaVrijednost = '"' . str_replace('"', '\"', $pronadjenaVrijednost) . '"';
-                                    }
-                                    $vrijednostiOstalihKontrola[]= $pronadjenaVrijednost;
-                                    $proslaPozicijaPronadjenog = $novaPozicijaPronadjenog;
-                                }
-                            }
-                        }
-                    }
-                    echo 'var predikati = [';
-                    echo implode(',', $predikati);
-                    echo '];';
-                    echo 'var vrijednostiOstalihKontrola = [';
-                    echo implode(',', $vrijednostiOstalihKontrola);
-                    echo '];';
                 }
-            ?>
-        </script>
+        ?>
         <script type="text/javascript" src="js/obrada-dogadjaja.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js?key=<?= getenv('GOOGLE_MAPS_API_KEY') ?>&libraries=places&v=weekly&callback=initializeDistCalc" async></script>
         <?php
