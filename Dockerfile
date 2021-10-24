@@ -86,7 +86,7 @@ RUN php -r "if (hash_file('sha384', 'composer-setup.php') === '906a84df04cea2aa7
 RUN php composer-setup.php --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
-RUN for branchName in $(curl https://api.github.com/repos/zeko868/schedule-generator/branches | jq -r '.[].name'); \
+RUN for branchName in $(curl https://api.github.com/repos/zeko868/schedule-generator/branches | jq -r '.[].name' | grep -v '^assets$'); \
     do \
       git clone --branch "$branchName" --depth 1 https://github.com/zeko868/schedule-generator.git /var/www/localhost/htdocs/$branchName; \
       cd /var/www/localhost/htdocs/$branchName; \
