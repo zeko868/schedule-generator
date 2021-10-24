@@ -95,9 +95,7 @@
                 $nazivDana = $naziviDana[$i-1];
                 $cmdUnosDana .= "assertz(dan({$i}, '$nazivDana', false)),";
             }
-            $putanja = dirname($_SERVER['PHP_SELF']);
-            $lokacijaDatoteke = "$_SERVER[REQUEST_SCHEME]://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]$putanja/$nazivDatotekeRasporeda";
-            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$lokacijaDatoteke')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), asserta(trazeniBrojRjesenja($batchSize)), $cmdTrazi, halt().";
+            $cmd = "$cmdUnosDana ignore(dohvatiCinjenice('$nazivDatotekeRasporeda')), $cmdUnosPredmetaTeOgranicenja ignore(inicijalizirajTrajanjaNastavePoDanima()), ignore(inicijalizirajTrajanjaPredmetaPoDanima()), asserta(trazeniBrojRjesenja($batchSize)), $cmdTrazi, halt().";
             if ($jestWindowsLjuska) {
                 $cmd = iconv('utf-8', 'windows-1250', $cmd);
             }
