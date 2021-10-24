@@ -224,7 +224,7 @@
         $akademskeGodine[]= "$pocetakAkademskeGodine/$krajAkademskeGodine";
     }
 
-    $batchSize = getenv('AJAX_MAX_FETCH_SIZE') ?: 10;
+    $batchSize = getenv('AJAX_MAX_FETCH_SIZE') ?: 1;
 
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header("Content-Type: application/json");
