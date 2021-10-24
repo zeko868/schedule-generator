@@ -149,7 +149,7 @@
                     $lokacijaSkripteDaemona = 'pronalazak-rasporeda.php';
                     $params = [
                         $jezik,
-                        $_SERVER['SERVER_ADDR'],
+                        filter_var($_SERVER['SERVER_ADDR'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? "[$_SERVER[SERVER_ADDR]]" : $_SERVER['SERVER_ADDR'],
                         $studij,
                         $akademskaGodina,
                         $semestar,
