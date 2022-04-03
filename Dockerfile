@@ -99,18 +99,15 @@ RUN for branchName in $(curl https://api.github.com/repos/zeko868/schedule-gener
 
 RUN apk del jq
 
-ENV SWIPL_VERSION 8.3.28
-
-ADD https://www.swi-prolog.org/download/devel/src/swipl-${SWIPL_VERSION}.tar.gz .
+RUN git clone --depth 1 https://github.com/SWI-Prolog/swipl-devel.git
 
 RUN apk add --no-cache \
     build-base \
     zlib-dev \
     cmake \
- && tar zxf swipl-${SWIPL_VERSION}.tar.gz \
- && mkdir swipl-${SWIPL_VERSION}/build
+ && mkdir swipl-devel/build
 
-WORKDIR /tmp/swipl-${SWIPL_VERSION}/build
+WORKDIR /tmp/swipl-devel/build
 
 RUN cmake \
     -DCMAKE_BUILD_TYPE=MinSizeRel \
