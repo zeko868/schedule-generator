@@ -9,23 +9,7 @@
     }
 
     function dodaj_u_raspored() {
-        global $prethodniId;
-        global $danUTjednu;
-        global $vrijemePocetka;
-        global $vrijemeZavrsetka;
-        global $trenutnoZimskiSemestar;
-        global $zimskiSemestarPocetak;
-        global $ljetniSemestarPocetak;
-        global $trajanjeZimskihPraznikaTjedni;
-        global $sifraPredmeta;
-        global $vrstaNastave;
-        //global $obveznostNastavePoPredmetima;
-        global $pocetakRazdoblja;
-        global $termini;
-        global $akademskaGodinaKraj;
-        global $zgrada;
-        global $prostorija;
-        //$obveznostPredmeta = $obveznostNastavePoPredmetima[$nazivPredmeta];
+        global $prethodniId, $danUTjednu, $vrijemePocetka, $vrijemeZavrsetka, $trenutnoZimskiSemestar, $zimskiSemestarPocetak, $ljetniSemestarPocetak, $trajanjeZimskihPraznikaTjedni, $sifraPredmeta, $vrstaNastave, $pocetakRazdoblja, $termini, $akademskaGodinaKraj, $zgrada, $prostorija;
         $danUTjednu = (int) date('N', $vrijemePocetka);
         $pocetakTjedna = strtotime('-' . ($danUTjednu - 1) . ' day', $vrijemePocetka);
         $pocetakTjedna -= $pocetakTjedna % (60*60*24);

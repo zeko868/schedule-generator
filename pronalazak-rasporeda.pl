@@ -3,6 +3,7 @@
 :- use_module(library(http/http_open)). % treba biti uključeno da bi predikat open_any/5 mogao pročitati udaljenu datoteku (u pozadini zapravo rabi predikat http_open/3, no za nju nije moguće postaviti encoding)
 :- use_module(library(http/json)).
 
+
 :- op(600, xfy, \\+).
 :- op(600, xfy, \\-).
 :- op(700, xfx, \\=).
@@ -10,6 +11,7 @@
 :- op(800, xfy, \\<=).
 :- op(800, xfy, \\>).
 :- op(800, xfy, \\>=).
+
 
 % operator za zbrajanje vremenskih trajanja, odnosno termova trajanje/2
 Rezultat \\= Trajanje1 \\+ Trajanje2 :- dajZbrojTrajanja(Trajanje1, Trajanje2, Rezultat).
@@ -22,6 +24,7 @@ VrijemeIliTrajanje1 \\< VrijemeIliTrajanje2 :- jestManje(VrijemeIliTrajanje1, Vr
 VrijemeIliTrajanje1 \\<= VrijemeIliTrajanje2 :- VrijemeIliTrajanje1==VrijemeIliTrajanje2 | VrijemeIliTrajanje1 \\< VrijemeIliTrajanje2.
 VrijemeIliTrajanje1 \\> VrijemeIliTrajanje2 :- not(VrijemeIliTrajanje1 \\<= VrijemeIliTrajanje2).
 VrijemeIliTrajanje1 \\>= VrijemeIliTrajanje2 :- not(VrijemeIliTrajanje1 \\< VrijemeIliTrajanje2).
+
 
 /*	// prikaz ručnog definiranja činjenica o terminima i obveznostima nastave u slučaju da ne postoji datoteka s izvorom podataka iz kojeg bi se baza znanja napunila potrebnim činjenicama za daljnji rad
 upisano('Baze znanja i semantički Web').
@@ -51,6 +54,8 @@ odrzavanje('Logičko programiranje', p, 1, 11).
 odrzavanje('Logičko programiranje', lv, 1, 11).
 odrzavanje('Logičko programiranje', s, 1, 16).
 */
+
+
 
 /**
  * dohvatiCinjenice(+UriResursa:atom) is failure.
@@ -122,6 +127,7 @@ dohvatiCinjenice(UriResursa) :-
 	false
 .
 
+
 :- dynamic
 	obveznost/2,									% obveznost(NazivPredmeta:atom, VrstaNastave:atom)
 	raspored/4,										% raspored(NazivPredmeta:atom, VrstaNastave:atom, Termin:termin/3, Lokacija:lokacija/2)
@@ -152,6 +158,7 @@ dohvatiCinjenice(UriResursa) :-
 	dan/3											% dan(RedniBrojDanaUTjednu:integer, NazivDana:atom, JestRadniDan:atom)
 .
 
+
 /**
  * inicijalizirajTrajanjaNastavePoDanima() is failure.
  * 
@@ -177,7 +184,8 @@ inicijalizirajTrajanjaPredmetaPoDanima() :-
 	false
 .
 
-/*
+
+/*	// otkomentirati u slučaju pokretanja aplikacije s ispisom rasporeda nastave u tabličnom obliku
 dan(1, 'ponedjeljak', true).
 dan(2, 'utorak', true).
 dan(3, 'srijeda', true).
@@ -186,6 +194,7 @@ dan(5, 'petak', true).
 dan(6, 'subota', false).
 dan(7, 'nedjelja', false).
 */
+
 
 /**
  * dohvatiRaspored(+OsnovniRaspored:atom) is failure.
