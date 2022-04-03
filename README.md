@@ -9,7 +9,7 @@
 ## Introduction
 This project was main programming solution in a practical part of my Master thesis [_Linking logic programming with other programming paradigms_](https://dabar.srce.hr/en/islandora/object/foi%3A3793) (document is in Croatian language). That's why the base of it is written in [Prolog](https://en.wikipedia.org/wiki/Prolog) - programming language that is the major representative of [logic programming paradigm](https://en.wikipedia.org/wiki/Logic_programming). 
 
-The solution solves the timetabling problem from students' perspective, i.e. it helps them find the timetable that suits them the best according to subjects they enroll and constraints/preferences they set. It was originally designed for application on the [Faculty of Organization and Informatics, University of Zagreb](https://www.foi.unizg.hr/), but it's quite configurable, so it could be used for students of other universities and even for solving similar problems outside academic area. The only feature which wouldn't be available in that case is data generation which is done by web-scrapping [its web-application](https://nastava.foi.hr/) in order to retrieve various info about subjects and its classes. Of course, even tiniest changes in that web-application could also break that feature completely (if they already haven't 😐). Fortunately, the application can still be used with custom data, although data construction/preparation does take some time.
+The solution solves the timetabling problem from students' perspective, i.e. it helps them find the timetable that suits them the best according to subjects they enroll and constraints/preferences they set. It was originally designed for application on the [Faculty of Organization and Informatics, University of Zagreb](https://www.foi.unizg.hr/hr), but it's quite configurable, so it could be used for students of other universities and even for solving similar problems outside academic area. The only feature which wouldn't be available in that case is data generation which is done by web-scrapping [its web-application](https://nastava.foi.hr/) in order to retrieve various info about subjects and its classes. Of course, even tiniest changes in that web-application could also break that feature completely (if they already haven't 😐). Fortunately, the application can still be used with custom data, although data construction/preparation does take some time.
 
 It consists of four versions where the code for each of them is available on one of the branches of this repository:
 * [Solution where all results are retrieved all at once](https://github.com/zeko868/schedule-generator/tree/results-all-at-once) - after request submission user has to wait that all solutions are found and only then they are sent to user
@@ -35,7 +35,7 @@ After that, you can access any of the app versions by visiting [http://localhost
 
 If you want to build your own Docker image, then you can do that by cloning this repository and then from its root directory run this command:
 ```bash
-docker build --tag zeko868/schedule-generator
+docker build --tag zeko868/schedule-generator .
 ```
 
 After the process completes, to run the image execute aforementioned command (this time the image won't be downloaded since the newly-built one is available in local container registry).
